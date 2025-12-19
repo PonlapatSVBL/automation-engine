@@ -1,0 +1,62 @@
+basePath: /api/v1
+definitions:
+  api.ActionResponse:
+    properties:
+      action_code:
+        type: string
+      action_id:
+        type: string
+      action_name:
+        type: string
+      action_type:
+        type: string
+      invoke_method:
+        type: string
+      invoke_type:
+        type: string
+      invoke_url:
+        type: string
+      status:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for Automation System
+  title: Automation Engine API
+  version: "1.0"
+paths:
+  /definition/actions:
+    get:
+      consumes:
+      - application/json
+      description: ดึงข้อมูลนิยามของ Action จากตาราง def_actions
+      parameters:
+      - description: Action ID (e.g. ACT001)
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get action by ID
+      tags:
+      - definition
+swagger: "2.0"

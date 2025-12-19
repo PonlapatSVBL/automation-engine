@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automation Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body class="bg-gray-50 font-sans">
+
+    <nav class="bg-slate-800 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold italic"><i class="fas fa-robot mr-2"></i>Automation Engine Admin</h1>
+            <div class="space-x-4">
+                <button onclick="switchTab('def')" class="hover:text-blue-400 transition">Capability Library
+                    (def_)</button>
+                <button onclick="switchTab('policy')" class="hover:text-blue-400 transition">Access Control
+                    (policy_)</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+
+        <div id="section-def" class="tab-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700">System Capabilities (def_actions)</h2>
+                <button onclick="openModal('action')"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow">
+                    <i class="fas fa-plus mr-2"></i>New Action
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID / Code</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="action-list" class="divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-policy" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700">Group Permissions (policy_group_actions)</h2>
+                <button onclick="openModal('policy')"
+                    class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 shadow">
+                    <i class="fas fa-shield-alt mr-2"></i>Bind Group & Action
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="policy-list">
+            </div>
+        </div>
+
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h3 id="modal-title" class="text-lg font-bold mb-4 text-gray-800">Create Action</h3>
+            <form id="main-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Action ID</label>
+                    <input type="text" name="id"
+                        class="w-full border border-gray-300 rounded-md p-2 mt-1 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Action Name</label>
+                    <input type="text" name="name"
+                        class="w-full border border-gray-300 rounded-md p-2 mt-1 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeModal()"
+                        class="text-gray-500 hover:text-gray-700">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8080/api/v1";
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+        }
+
+        async function loadActions() {
+            try {
+                // ตัวอย่างยิง API (ต้องเปิด CORS ใน Go ด้วย)
+                // const res = await fetch(`${API_BASE}/definition/actions`);
+                // const data = await res.json();
+
+                // ข้อมูลสมมติสำหรับแสดงผล UI
+                const mockData = [
+                    { id: 'ACT001', code: 'SEND_EMAIL', name: 'Email Sender', method: 'POST', status: 'active' },
+                    { id: 'ACT002', code: 'WEBHOOK_CB', name: 'Webhook Callback', method: 'GET', status: 'active' }
+                ];
+
+                const tbody = document.getElementById('action-list');
+                tbody.innerHTML = mockData.map(item => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-bold text-gray-900">${item.id}</div>
+                            <div class="text-xs text-gray-500">${item.code}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${item.name}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${item.method}</span></td>
+                        <td class="px-6 py-4 text-sm text-green-600 font-medium">${item.status}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button class="text-blue-600 hover:underline mr-3"><i class="fas fa-edit"></i></button>
+                            <button class="text-red-600 hover:underline"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) { console.error("API Error:", e); }
+        }
+
+        function openModal(type) {
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modal-title').innerText = type === 'action' ? 'Register New System Action' : 'Define Group Access';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // Initial Load
+        loadActions();
+    </script>
+</body>
+
+</html>

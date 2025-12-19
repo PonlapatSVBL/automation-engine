@@ -1,0 +1,94 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for Automation System",
+        "title": "Automation Engine API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/definition/actions": {
+            "get": {
+                "description": "ดึงข้อมูลนิยามของ Action จากตาราง def_actions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "definition"
+                ],
+                "summary": "Get action by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Action ID (e.g. ACT001)",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.ActionResponse": {
+            "type": "object",
+            "properties": {
+                "action_code": {
+                    "type": "string"
+                },
+                "action_id": {
+                    "type": "string"
+                },
+                "action_name": {
+                    "type": "string"
+                },
+                "action_type": {
+                    "type": "string"
+                },
+                "invoke_method": {
+                    "type": "string"
+                },
+                "invoke_type": {
+                    "type": "string"
+                },
+                "invoke_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
