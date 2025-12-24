@@ -29,12 +29,18 @@ type DefinitionService interface {
 }
 
 type definitionService struct {
-	actionRepo repository.ActionRepository
+	actionRepo    repository.ActionRepository
+	conditionRepo repository.ConditionRepository
+	operatorRepo  repository.OperatorRepository
+	unitRepo      repository.UnitRepository
 }
 
 func NewDefinitionService(db *gorm.DB) DefinitionService {
 	return &definitionService{
-		actionRepo: repository.NewActionRepository(db),
+		actionRepo:    repository.NewActionRepository(db),
+		conditionRepo: repository.NewConditionRepository(db),
+		operatorRepo:  repository.NewOperatorRepository(db),
+		unitRepo:      repository.NewUnitRepository(db),
 	}
 }
 

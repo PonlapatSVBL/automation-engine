@@ -9,11 +9,15 @@ import (
 type PolicyService interface{}
 
 type policyService struct {
-	conditionActionRepo repository.ConditionActionRepository
+	conditionActionRepo   repository.ConditionActionRepository
+	conditionOperatorRepo repository.ConditionOperatorRepository
+	conditionUnitRepo     repository.ConditionUnitRepository
 }
 
 func NewPolicyService(db *gorm.DB) PolicyService {
 	return &policyService{
-		conditionActionRepo: repository.NewConditionActionRepository(db),
+		conditionActionRepo:   repository.NewConditionActionRepository(db),
+		conditionOperatorRepo: repository.NewConditionOperatorRepository(db),
+		conditionUnitRepo:     repository.NewConditionUnitRepository(db),
 	}
 }
