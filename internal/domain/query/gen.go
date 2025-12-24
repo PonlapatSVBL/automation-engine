@@ -23,6 +23,7 @@ var (
 	DefOperator             *defOperator
 	DefUnit                 *defUnit
 	LogAutomationExecution  *logAutomationExecution
+	PolicyConditionAction   *policyConditionAction
 	PolicyConditionOperator *policyConditionOperator
 	PolicyConditionUnit     *policyConditionUnit
 	PolicyGroupAction       *policyGroupAction
@@ -40,6 +41,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	DefOperator = &Q.DefOperator
 	DefUnit = &Q.DefUnit
 	LogAutomationExecution = &Q.LogAutomationExecution
+	PolicyConditionAction = &Q.PolicyConditionAction
 	PolicyConditionOperator = &Q.PolicyConditionOperator
 	PolicyConditionUnit = &Q.PolicyConditionUnit
 	PolicyGroupAction = &Q.PolicyGroupAction
@@ -58,6 +60,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		DefOperator:             newDefOperator(db, opts...),
 		DefUnit:                 newDefUnit(db, opts...),
 		LogAutomationExecution:  newLogAutomationExecution(db, opts...),
+		PolicyConditionAction:   newPolicyConditionAction(db, opts...),
 		PolicyConditionOperator: newPolicyConditionOperator(db, opts...),
 		PolicyConditionUnit:     newPolicyConditionUnit(db, opts...),
 		PolicyGroupAction:       newPolicyGroupAction(db, opts...),
@@ -77,6 +80,7 @@ type Query struct {
 	DefOperator             defOperator
 	DefUnit                 defUnit
 	LogAutomationExecution  logAutomationExecution
+	PolicyConditionAction   policyConditionAction
 	PolicyConditionOperator policyConditionOperator
 	PolicyConditionUnit     policyConditionUnit
 	PolicyGroupAction       policyGroupAction
@@ -97,6 +101,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		DefOperator:             q.DefOperator.clone(db),
 		DefUnit:                 q.DefUnit.clone(db),
 		LogAutomationExecution:  q.LogAutomationExecution.clone(db),
+		PolicyConditionAction:   q.PolicyConditionAction.clone(db),
 		PolicyConditionOperator: q.PolicyConditionOperator.clone(db),
 		PolicyConditionUnit:     q.PolicyConditionUnit.clone(db),
 		PolicyGroupAction:       q.PolicyGroupAction.clone(db),
@@ -124,6 +129,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		DefOperator:             q.DefOperator.replaceDB(db),
 		DefUnit:                 q.DefUnit.replaceDB(db),
 		LogAutomationExecution:  q.LogAutomationExecution.replaceDB(db),
+		PolicyConditionAction:   q.PolicyConditionAction.replaceDB(db),
 		PolicyConditionOperator: q.PolicyConditionOperator.replaceDB(db),
 		PolicyConditionUnit:     q.PolicyConditionUnit.replaceDB(db),
 		PolicyGroupAction:       q.PolicyGroupAction.replaceDB(db),
@@ -141,6 +147,7 @@ type queryCtx struct {
 	DefOperator             IDefOperatorDo
 	DefUnit                 IDefUnitDo
 	LogAutomationExecution  ILogAutomationExecutionDo
+	PolicyConditionAction   IPolicyConditionActionDo
 	PolicyConditionOperator IPolicyConditionOperatorDo
 	PolicyConditionUnit     IPolicyConditionUnitDo
 	PolicyGroupAction       IPolicyGroupActionDo
@@ -158,6 +165,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		DefOperator:             q.DefOperator.WithContext(ctx),
 		DefUnit:                 q.DefUnit.WithContext(ctx),
 		LogAutomationExecution:  q.LogAutomationExecution.WithContext(ctx),
+		PolicyConditionAction:   q.PolicyConditionAction.WithContext(ctx),
 		PolicyConditionOperator: q.PolicyConditionOperator.WithContext(ctx),
 		PolicyConditionUnit:     q.PolicyConditionUnit.WithContext(ctx),
 		PolicyGroupAction:       q.PolicyGroupAction.WithContext(ctx),

@@ -50,10 +50,12 @@ func main() {
 
 	// 2. ประกอบร่างจิ๊กซอว์ (Dependency Injection)
 	// DefinitionService จะสร้าง ActionRepository ภายในตัวมันเองตามที่คุณเขียนไว้
-	defService := service.NewDefinitionService(db)
+	definitionService := service.NewDefinitionService(db)
+	policyService := service.NewPolicyService(db)
 
 	// สร้าง Handler โดยส่ง Service เข้าไป
-	defHandler := api.NewDefinitionHandler(defService)
+	definitionHandler := api.NewDefinitionHandler(definitionService)
+	policyHandler := api.NewPolicyHandler(policyService)
 	authHandler := api.NewAuthHandler()
 
 	// 3. เริ่มต้นระบบ HTTP Server ด้วย Gin
@@ -73,10 +75,15 @@ func main() {
 	protected.Use(middleware.AuthMiddleware())
 	{
 		// ย้ายกลุ่ม definition มาไว้ที่นี่
-		defGroup := protected.Group("/definition")
+		definitionGroup := protected.Group("/definition")
 		{
-			defGroup.GET("/actions", defHandler.GetActionByID)
-			defGroup.POST("/actions", defHandler.CreateAction)
+			definitionGroup.GET("/actions", definitionHandler.GetActionByID)
+			definitionGroup.POST("/actions", definitionHandler.CreateAction)
+		}
+
+		policyGroup := protected.Group("/policy")
+		{
+			policyGroup.POST("/condition-actions", policyHandler.CreateConditionActions)
 		}
 	}
 

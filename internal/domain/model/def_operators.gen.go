@@ -13,7 +13,7 @@ const TableNameDefOperator = "def_operators"
 // DefOperator mapped from table <def_operators>
 type DefOperator struct {
 	OperatorID     string    `gorm:"column:operator_id;primaryKey" json:"operator_id"`
-	OperatorSymbol string    `gorm:"column:operator_symbol;not null" json:"operator_symbol"`
+	OperatorSymbol string    `gorm:"column:operator_symbol" json:"operator_symbol"`
 	OperatorName   string    `gorm:"column:operator_name" json:"operator_name"`
 	Status         string    `gorm:"column:status;not null" json:"status"`
 	Created        time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
