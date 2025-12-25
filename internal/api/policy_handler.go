@@ -23,6 +23,17 @@ type CreatePolicyConditionActionRequest struct {
 	CreatedBy   string   `json:"created_by" binding:"required"`
 }
 
+func (h *PolicyHandler) GetPolicyRuleConfig(c *gin.Context) {
+	response, err := h.policyService.GetPolicyRuleConfig(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, response)
+}
+
 func (h *PolicyHandler) CreateConditionActions(c *gin.Context) {
 	var req CreatePolicyConditionActionRequest
 

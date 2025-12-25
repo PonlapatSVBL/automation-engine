@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"automation-engine/internal/api"
@@ -9,6 +10,7 @@ import (
 	"automation-engine/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/driver/mysql"
@@ -28,13 +30,22 @@ import (
 // @in header
 // @name Authorization
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system env")
+	}
+
+	dbHost := os.Getenv("MYSQL_HOST")
+	dbUser := os.Getenv("MYSQL_USER")
+	dbPass := os.Getenv("MYSQL_PASSWORD")
+	dbName := os.Getenv("MYSQL_DB")
+
 	// 1. เชื่อมต่อ Database (GORM)
 	cfg := myConfig.Config{
-		User:   "",
-		Passwd: "",
+		User:   dbUser,
+		Passwd: dbPass,
 		Net:    "tcp",
-		Addr:   ":3306",
-		DBName: "hms_automation_engine",
+		Addr:   dbHost + ":3306",
+		DBName: dbName,
 		Params: map[string]string{
 			"charset":              "utf8mb4",
 			"allowNativePasswords": "true",
@@ -52,11 +63,15 @@ func main() {
 	// DefinitionService จะสร้าง ActionRepository ภายในตัวมันเองตามที่คุณเขียนไว้
 	definitionService := service.NewDefinitionService(db)
 	policyService := service.NewPolicyService(db)
+	runService := service.NewRunService(db)
+	logService := service.NewLogService(db)
 
 	// สร้าง Handler โดยส่ง Service เข้าไป
+	authHandler := api.NewAuthHandler()
 	definitionHandler := api.NewDefinitionHandler(definitionService)
 	policyHandler := api.NewPolicyHandler(policyService)
-	authHandler := api.NewAuthHandler()
+	runHandler := api.NewRunHandler(runService)
+	logHandler := api.NewLogHandler(logService)
 
 	// 3. เริ่มต้นระบบ HTTP Server ด้วย Gin
 	r := gin.Default()
@@ -83,7 +98,18 @@ func main() {
 
 		policyGroup := protected.Group("/policy")
 		{
+			policyGroup.GET("/rule-config", policyHandler.GetPolicyRuleConfig)
 			policyGroup.POST("/condition-actions", policyHandler.CreateConditionActions)
+		}
+
+		runGroup := protected.Group("/run")
+		{
+			runGroup.POST("/automation", runHandler.CreateAutomation)
+		}
+
+		logGroup := protected.Group("/logs")
+		{
+			logGroup.GET("/automation-execution", logHandler.CreateAutomationExecution)
 		}
 	}
 

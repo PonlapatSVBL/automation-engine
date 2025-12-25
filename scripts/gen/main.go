@@ -2,21 +2,33 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	myConfig "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gen"
 	"gorm.io/gorm"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system env")
+	}
+
+	dbHost := os.Getenv("MYSQL_HOST")
+	dbUser := os.Getenv("MYSQL_USER")
+	dbPass := os.Getenv("MYSQL_PASSWORD")
+	dbName := os.Getenv("MYSQL_DB")
+
 	cfg := myConfig.Config{
-		User:   "",
-		Passwd: "",
+		User:   dbUser,
+		Passwd: dbPass,
 		Net:    "tcp",
-		Addr:   ":3306",
-		DBName: "hms_automation_engine",
+		Addr:   dbHost + ":3306",
+		DBName: dbName,
 		Params: map[string]string{
 			"charset":              "utf8mb4",
 			"allowNativePasswords": "true",
