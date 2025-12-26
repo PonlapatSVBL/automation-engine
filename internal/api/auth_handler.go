@@ -2,13 +2,14 @@ package api
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("your-very-secret-key") // ต้องตรงกับใน Middleware
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 type LoginRequest struct {
 	Username string `json:"username" binding:"required"`
@@ -39,7 +40,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// 1. ตรวจสอบ User (ตัวอย่างนี้เป็น Hardcode แต่ในงานจริงต้องเช็คจาก Database)
 	// ปกติควรดึง User จาก DB มาเทียบ Password (Bcrypt) และเอา GroupID มาด้วย
-	if req.Username == "admin" && req.Password == "password123" {
+	if req.Username == os.Getenv("PORTAL_USER_NAME") && req.Password == os.Getenv("PORTAL_USER_PASSWORD") {
 
 		// 2. สร้าง Claims (ข้อมูลที่จะใส่ใน Token)
 		claims := jwt.MapClaims{

@@ -79,6 +79,10 @@ func main() {
 	// Route สำหรับ Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	r.GET("/ui/policy-rule-config", func(c *gin.Context) {
+		c.File("./web/policy-rule-config.html")
+	})
+
 	// 4. กำหนด Routes (เส้นทาง API)
 	apiV1 := r.Group("/api/v1")
 	{
@@ -99,6 +103,8 @@ func main() {
 		policyGroup := protected.Group("/policy")
 		{
 			policyGroup.GET("/rule-config", policyHandler.GetPolicyRuleConfig)
+			policyGroup.POST("/condition-operators", policyHandler.CreateConditionOperators)
+			policyGroup.POST("/condition-units", policyHandler.CreateConditionUnits)
 			policyGroup.POST("/condition-actions", policyHandler.CreateConditionActions)
 		}
 

@@ -10,6 +10,9 @@ import (
 
 type ConditionOperatorRepository interface {
 	List(ctx context.Context, filter model.PolicyConditionOperator) ([]*model.PolicyConditionOperator, error)
+	DeleteByConditionID(ctx context.Context, conditionID string) error
+	BulkCreate(ctx context.Context, ops []*model.PolicyConditionOperator) error
+	WithTransaction(ctx context.Context, fn func(txRepo ConditionOperatorRepository) error) error
 }
 
 type conditionOperatorRepository struct {
@@ -25,4 +28,22 @@ func (r *conditionOperatorRepository) List(ctx context.Context, filter model.Pol
 	db := q.WithContext(ctx)
 
 	return db.Find()
+}
+
+func (r *conditionOperatorRepository) DeleteByConditionID(ctx context.Context, conditionID string) error {
+	return r.db.WithContext(ctx).
+		Where("condition_id = ?", conditionID).
+		Delete(&model.PolicyConditionOperator{}).Error
+}
+
+func (r *conditionOperatorRepository) BulkCreate(ctx context.Context, ops []*model.PolicyConditionOperator) error {
+	return r.db.WithContext(ctx).
+		Create(&ops).Error
+}
+
+func (r *conditionOperatorRepository) WithTransaction(ctx context.Context, fn func(txRepo ConditionOperatorRepository) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txRepo := NewConditionOperatorRepository(tx)
+		return fn(txRepo)
+	})
 }
