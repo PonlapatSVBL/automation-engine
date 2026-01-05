@@ -12,9 +12,8 @@ const TableNamePolicyConditionAction = "policy_condition_actions"
 
 // PolicyConditionAction mapped from table <policy_condition_actions>
 type PolicyConditionAction struct {
-	MyRowID     int64     `gorm:"column:my_row_id;primaryKey;autoIncrement:true" json:"my_row_id"`
-	ConditionID string    `gorm:"column:condition_id;not null" json:"condition_id"`
-	ActionID    string    `gorm:"column:action_id;not null" json:"action_id"`
+	ConditionID string    `gorm:"column:condition_id;primaryKey" json:"condition_id"`
+	ActionID    string    `gorm:"column:action_id;primaryKey" json:"action_id"`
 	Created     time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
 	CreatedBy   string    `gorm:"column:created_by" json:"created_by"`
 }

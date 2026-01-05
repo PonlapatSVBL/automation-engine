@@ -13,6 +13,7 @@ const TableNameRunAutomation = "run_automations"
 // RunAutomation mapped from table <run_automations>
 type RunAutomation struct {
 	AutomationID            string    `gorm:"column:automation_id;primaryKey" json:"automation_id"`
+	Version                 int32     `gorm:"column:version;not null;default:1" json:"version"`
 	InstanceServerID        string    `gorm:"column:instance_server_id" json:"instance_server_id"`
 	InstanceServerChannelID string    `gorm:"column:instance_server_channel_id" json:"instance_server_channel_id"`
 	AutomationName          string    `gorm:"column:automation_name" json:"automation_name"`
@@ -20,7 +21,8 @@ type RunAutomation struct {
 	Time                    time.Time `gorm:"column:time;not null" json:"time"`
 	DayOfWeek               string    `gorm:"column:day_of_week;not null" json:"day_of_week"`
 	DayOfMonth              int64     `gorm:"column:day_of_month;not null" json:"day_of_month"`
-	IsActive                bool      `gorm:"column:is_active;not null;default:1" json:"is_active"`
+	IsActive                string    `gorm:"column:is_active;not null;default:Y" json:"is_active"`
+	NextRun                 time.Time `gorm:"column:next_run" json:"next_run"`
 	Created                 time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
 	CreatedBy               string    `gorm:"column:created_by" json:"created_by"`
 	LastUpd                 time.Time `gorm:"column:last_upd;not null;default:CURRENT_TIMESTAMP" json:"last_upd"`

@@ -28,7 +28,6 @@ func newPolicyConditionAction(db *gorm.DB, opts ...gen.DOOption) policyCondition
 
 	tableName := _policyConditionAction.policyConditionActionDo.TableName()
 	_policyConditionAction.ALL = field.NewAsterisk(tableName)
-	_policyConditionAction.MyRowID = field.NewInt64(tableName, "my_row_id")
 	_policyConditionAction.ConditionID = field.NewString(tableName, "condition_id")
 	_policyConditionAction.ActionID = field.NewString(tableName, "action_id")
 	_policyConditionAction.Created = field.NewTime(tableName, "created")
@@ -43,7 +42,6 @@ type policyConditionAction struct {
 	policyConditionActionDo policyConditionActionDo
 
 	ALL         field.Asterisk
-	MyRowID     field.Int64
 	ConditionID field.String
 	ActionID    field.String
 	Created     field.Time
@@ -64,7 +62,6 @@ func (p policyConditionAction) As(alias string) *policyConditionAction {
 
 func (p *policyConditionAction) updateTableName(table string) *policyConditionAction {
 	p.ALL = field.NewAsterisk(table)
-	p.MyRowID = field.NewInt64(table, "my_row_id")
 	p.ConditionID = field.NewString(table, "condition_id")
 	p.ActionID = field.NewString(table, "action_id")
 	p.Created = field.NewTime(table, "created")
@@ -97,8 +94,7 @@ func (p *policyConditionAction) GetFieldByName(fieldName string) (field.OrderExp
 }
 
 func (p *policyConditionAction) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 5)
-	p.fieldMap["my_row_id"] = p.MyRowID
+	p.fieldMap = make(map[string]field.Expr, 4)
 	p.fieldMap["condition_id"] = p.ConditionID
 	p.fieldMap["action_id"] = p.ActionID
 	p.fieldMap["created"] = p.Created

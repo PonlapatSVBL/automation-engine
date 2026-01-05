@@ -29,6 +29,7 @@ func newRunAutomation(db *gorm.DB, opts ...gen.DOOption) runAutomation {
 	tableName := _runAutomation.runAutomationDo.TableName()
 	_runAutomation.ALL = field.NewAsterisk(tableName)
 	_runAutomation.AutomationID = field.NewString(tableName, "automation_id")
+	_runAutomation.Version = field.NewInt32(tableName, "version")
 	_runAutomation.InstanceServerID = field.NewString(tableName, "instance_server_id")
 	_runAutomation.InstanceServerChannelID = field.NewString(tableName, "instance_server_channel_id")
 	_runAutomation.AutomationName = field.NewString(tableName, "automation_name")
@@ -36,7 +37,8 @@ func newRunAutomation(db *gorm.DB, opts ...gen.DOOption) runAutomation {
 	_runAutomation.Time = field.NewTime(tableName, "time")
 	_runAutomation.DayOfWeek = field.NewString(tableName, "day_of_week")
 	_runAutomation.DayOfMonth = field.NewInt64(tableName, "day_of_month")
-	_runAutomation.IsActive = field.NewBool(tableName, "is_active")
+	_runAutomation.IsActive = field.NewString(tableName, "is_active")
+	_runAutomation.NextRun = field.NewTime(tableName, "next_run")
 	_runAutomation.Created = field.NewTime(tableName, "created")
 	_runAutomation.CreatedBy = field.NewString(tableName, "created_by")
 	_runAutomation.LastUpd = field.NewTime(tableName, "last_upd")
@@ -52,6 +54,7 @@ type runAutomation struct {
 
 	ALL                     field.Asterisk
 	AutomationID            field.String
+	Version                 field.Int32
 	InstanceServerID        field.String
 	InstanceServerChannelID field.String
 	AutomationName          field.String
@@ -59,7 +62,8 @@ type runAutomation struct {
 	Time                    field.Time
 	DayOfWeek               field.String
 	DayOfMonth              field.Int64
-	IsActive                field.Bool
+	IsActive                field.String
+	NextRun                 field.Time
 	Created                 field.Time
 	CreatedBy               field.String
 	LastUpd                 field.Time
@@ -81,6 +85,7 @@ func (r runAutomation) As(alias string) *runAutomation {
 func (r *runAutomation) updateTableName(table string) *runAutomation {
 	r.ALL = field.NewAsterisk(table)
 	r.AutomationID = field.NewString(table, "automation_id")
+	r.Version = field.NewInt32(table, "version")
 	r.InstanceServerID = field.NewString(table, "instance_server_id")
 	r.InstanceServerChannelID = field.NewString(table, "instance_server_channel_id")
 	r.AutomationName = field.NewString(table, "automation_name")
@@ -88,7 +93,8 @@ func (r *runAutomation) updateTableName(table string) *runAutomation {
 	r.Time = field.NewTime(table, "time")
 	r.DayOfWeek = field.NewString(table, "day_of_week")
 	r.DayOfMonth = field.NewInt64(table, "day_of_month")
-	r.IsActive = field.NewBool(table, "is_active")
+	r.IsActive = field.NewString(table, "is_active")
+	r.NextRun = field.NewTime(table, "next_run")
 	r.Created = field.NewTime(table, "created")
 	r.CreatedBy = field.NewString(table, "created_by")
 	r.LastUpd = field.NewTime(table, "last_upd")
@@ -121,8 +127,9 @@ func (r *runAutomation) GetFieldByName(fieldName string) (field.OrderExpr, bool)
 }
 
 func (r *runAutomation) fillFieldMap() {
-	r.fieldMap = make(map[string]field.Expr, 13)
+	r.fieldMap = make(map[string]field.Expr, 15)
 	r.fieldMap["automation_id"] = r.AutomationID
+	r.fieldMap["version"] = r.Version
 	r.fieldMap["instance_server_id"] = r.InstanceServerID
 	r.fieldMap["instance_server_channel_id"] = r.InstanceServerChannelID
 	r.fieldMap["automation_name"] = r.AutomationName
@@ -131,6 +138,7 @@ func (r *runAutomation) fillFieldMap() {
 	r.fieldMap["day_of_week"] = r.DayOfWeek
 	r.fieldMap["day_of_month"] = r.DayOfMonth
 	r.fieldMap["is_active"] = r.IsActive
+	r.fieldMap["next_run"] = r.NextRun
 	r.fieldMap["created"] = r.Created
 	r.fieldMap["created_by"] = r.CreatedBy
 	r.fieldMap["last_upd"] = r.LastUpd
