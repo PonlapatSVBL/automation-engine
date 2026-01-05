@@ -1,6 +1,7 @@
 package azbus
 
 import (
+	"automation-engine/internal/domain/model"
 	"automation-engine/internal/httpclient"
 	"automation-engine/internal/service"
 	"automation-engine/internal/utils"
@@ -35,6 +36,7 @@ type SessionReceiver struct {
 	wg         *sync.WaitGroup
 	client     *azservicebus.Client
 	queueName  string
+	sender     *Sender
 	runService service.RunService
 	options    SessionReceiverOptions
 }
@@ -64,12 +66,18 @@ func NewSessionReceiver(ctx context.Context, wg *sync.WaitGroup, client *azservi
 		}
 	}
 
+	sender, err := NewSender(ctx, client, queueName)
+	if err != nil {
+		log.Fatalf("Failed to create sender: %v", err)
+	}
+
 	// 3. สร้าง Struct โดยใช้ opts ที่ได้มา
 	return &SessionReceiver{
 		ctx:        ctx,
 		wg:         wg,
 		client:     client,
 		queueName:  queueName,
+		sender:     sender,
 		runService: runService,
 		options:    defaultOpts,
 	}
@@ -213,9 +221,10 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 		return nil
 	}
 
+	var next time.Time
 	switch automation.IntervalType {
 	case "daily":
-		next, err := utils.CalculateDailyNextRun(
+		next, err = utils.CalculateDailyNextRun(
 			time.Now(),
 			automation.Time,
 			time.Local,
@@ -225,7 +234,7 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 		}
 		log.Printf("Next daily run calculated: %s", next)
 	case "weekly":
-		next, err := utils.CalculateWeeklyNextRun(
+		next, err = utils.CalculateWeeklyNextRun(
 			time.Now(),
 			automation.Time,
 			automation.DayOfWeek,
@@ -236,7 +245,7 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 		}
 		log.Printf("Next weekly run calculated: %s", next)
 	case "monthly":
-		next, err := utils.CalculateMonthlyNextRun(
+		next, err = utils.CalculateMonthlyNextRun(
 			time.Now(),
 			automation.Time,
 			int(automation.DayOfMonth),
@@ -254,7 +263,20 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 
 	// Handle non-200 status code or network/client errors
 	if err != nil || statusCode != 200 {
-		return fmt.Errorf("post request failed")
+		// return fmt.Errorf("post request failed")
+	}
+
+	err = sr.sender.ScheduleMessage(sr.ctx, "1", msg.Body, next)
+	if err != nil {
+		return fmt.Errorf("failed to schedule next message: %w", err)
+	}
+
+	err = sr.runService.UpdateAutomationByID(sr.ctx, &model.RunAutomation{
+		AutomationID: body.AutomationID,
+		NextRun:      next,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update automation next run: %w", err)
 	}
 
 	// Successfully processed the message

@@ -10,6 +10,7 @@ import (
 
 type RunService interface {
 	GetAutomationByID(ctx context.Context, automationID string) (*model.RunAutomation, error)
+	UpdateAutomationByID(ctx context.Context, automation *model.RunAutomation) error
 }
 
 type runService struct {
@@ -33,4 +34,13 @@ func (s *runService) GetAutomationByID(ctx context.Context, automationID string)
 	}
 
 	return row, nil
+}
+
+func (s *runService) UpdateAutomationByID(ctx context.Context, automation *model.RunAutomation) error {
+	err := s.automationRepo.Update(ctx, automation)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
