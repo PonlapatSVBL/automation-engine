@@ -56,7 +56,32 @@ func (s *runService) UpdateAutomationByID(ctx context.Context, automation *model
 func (s *runService) FetchAndLockTasks(ctx context.Context, limit int) ([]*model.RunAutomation, error) {
 	var tasks []*model.RunAutomation
 
-	err := s.automationRepo.WithTransaction(ctx, func(txRepo repository.AutomationRepository) error {
+	err := s.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		// 1. ดึงงานและ Lock แถวไว้
+		lockedTasks, err := s.automationRepo.FetchAndLock(txCtx, limit)
+		if err != nil {
+			return err
+		}
+
+		if len(lockedTasks) == 0 {
+			return nil
+		}
+
+		// 2. เก็บ IDs เพื่อไปอัพเดทสถานะ
+		var ids []string
+		for _, t := range lockedTasks {
+			ids = append(ids, t.AutomationID)
+		}
+
+		// 3. เปลี่ยนสถานะเป็น LOCKED ทันที (จองงาน)
+		if err := s.automationRepo.UpdateStatusBatch(txCtx, ids, "LOCKED"); err != nil {
+			return err
+		}
+
+		tasks = lockedTasks
+		return nil
+	})
+	/* err := s.automationRepo.WithTransaction(ctx, func(txRepo repository.AutomationRepository) error {
 		// 1. ดึงงานและ Lock แถวไว้
 		lockedTasks, err := txRepo.FetchAndLock(ctx, limit)
 		if err != nil {
@@ -80,7 +105,7 @@ func (s *runService) FetchAndLockTasks(ctx context.Context, limit int) ([]*model
 
 		tasks = lockedTasks
 		return nil
-	})
+	}) */
 
 	return tasks, err
 }
