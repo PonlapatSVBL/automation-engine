@@ -2,18 +2,21 @@ package service
 
 import (
 	"automation-engine/internal/repository"
-
-	"gorm.io/gorm"
 )
 
 type LogService interface{}
 
 type logService struct {
+	txManager               repository.TransactionManager
 	automationExecutionRepo repository.AutomationExecutionRepository
 }
 
-func NewLogService(db *gorm.DB) LogService {
+func NewLogService(
+	txManager repository.TransactionManager,
+	automationExecutionRepo repository.AutomationExecutionRepository,
+) LogService {
 	return &logService{
-		automationExecutionRepo: repository.NewAutomationExecutionRepository(db),
+		txManager:               txManager,
+		automationExecutionRepo: automationExecutionRepo,
 	}
 }

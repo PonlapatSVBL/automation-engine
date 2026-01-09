@@ -4,8 +4,6 @@ import (
 	"automation-engine/internal/domain/model"
 	"automation-engine/internal/repository"
 	"context"
-
-	"gorm.io/gorm"
 )
 
 type PolicyService interface {
@@ -16,6 +14,7 @@ type PolicyService interface {
 }
 
 type policyService struct {
+	txManager             repository.TransactionManager
 	conditionRepo         repository.ConditionRepository
 	operatorRepo          repository.OperatorRepository
 	unitRepo              repository.UnitRepository
@@ -23,7 +22,6 @@ type policyService struct {
 	conditionOperatorRepo repository.ConditionOperatorRepository
 	conditionUnitRepo     repository.ConditionUnitRepository
 	conditionActionRepo   repository.ConditionActionRepository
-	// policyRepo            repository.PolicyRepository
 }
 
 type GetPolicyRuleConfigResponse struct {
@@ -36,16 +34,24 @@ type GetPolicyRuleConfigResponse struct {
 	ConditionActions   []*model.PolicyConditionAction
 }
 
-func NewPolicyService(db *gorm.DB) PolicyService {
+func NewPolicyService(
+	txManager repository.TransactionManager,
+	conditionRepo repository.ConditionRepository,
+	operatorRepo repository.OperatorRepository,
+	unitRepo repository.UnitRepository,
+	actionRepo repository.ActionRepository,
+	conditionOperatorRepo repository.ConditionOperatorRepository,
+	conditionUnitRepo repository.ConditionUnitRepository,
+	conditionActionRepo repository.ConditionActionRepository,
+) PolicyService {
 	return &policyService{
-		conditionRepo:         repository.NewConditionRepository(db),
-		operatorRepo:          repository.NewOperatorRepository(db),
-		unitRepo:              repository.NewUnitRepository(db),
-		actionRepo:            repository.NewActionRepository(db),
-		conditionOperatorRepo: repository.NewConditionOperatorRepository(db),
-		conditionUnitRepo:     repository.NewConditionUnitRepository(db),
-		conditionActionRepo:   repository.NewConditionActionRepository(db),
-		// policyRepo:            repository.NewPolicyRepository(db),
+		conditionRepo:         conditionRepo,
+		operatorRepo:          operatorRepo,
+		unitRepo:              unitRepo,
+		actionRepo:            actionRepo,
+		conditionOperatorRepo: conditionOperatorRepo,
+		conditionUnitRepo:     conditionUnitRepo,
+		conditionActionRepo:   conditionActionRepo,
 	}
 }
 

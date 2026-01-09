@@ -4,8 +4,6 @@ import (
 	"automation-engine/internal/domain/model"
 	"automation-engine/internal/repository"
 	"context"
-
-	"gorm.io/gorm"
 )
 
 type RunService interface {
@@ -17,16 +15,23 @@ type RunService interface {
 }
 
 type runService struct {
+	txManager               repository.TransactionManager
 	automationRepo          repository.AutomationRepository
 	automationActionRepo    repository.AutomationActionRepository
 	automationConditionRepo repository.AutomationConditionRepository
 }
 
-func NewRunService(db *gorm.DB) RunService {
+func NewRunService(
+	txManager repository.TransactionManager,
+	automationRepo repository.AutomationRepository,
+	automationActionRepo repository.AutomationActionRepository,
+	automationConditionRepo repository.AutomationConditionRepository,
+) RunService {
 	return &runService{
-		automationRepo:          repository.NewAutomationRepository(db),
-		automationActionRepo:    repository.NewAutomationActionRepository(db),
-		automationConditionRepo: repository.NewAutomationConditionRepository(db),
+		txManager:               txManager,
+		automationRepo:          automationRepo,
+		automationActionRepo:    automationActionRepo,
+		automationConditionRepo: automationConditionRepo,
 	}
 }
 

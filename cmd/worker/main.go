@@ -2,6 +2,7 @@ package main
 
 import (
 	"automation-engine/internal/azbus"
+	"automation-engine/internal/repository"
 	"automation-engine/internal/service"
 	"automation-engine/internal/utils"
 	"context"
@@ -49,7 +50,17 @@ func main() {
 		log.Fatalf("Failed to connect database: %v", err)
 	}
 
-	runService := service.NewRunService(db)
+	txManager := repository.NewTransactionManager(db)
+	automationRepo := repository.NewAutomationRepository(db)
+	automationActionRepo := repository.NewAutomationActionRepository(db)
+	automationConditionRepo := repository.NewAutomationConditionRepository(db)
+
+	runService := service.NewRunService(
+		txManager,
+		automationRepo,
+		automationActionRepo,
+		automationConditionRepo,
+	)
 
 	// Create context with cancel
 	ctx, cancel := context.WithCancel(context.Background())

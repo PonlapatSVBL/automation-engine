@@ -4,8 +4,6 @@ import (
 	"automation-engine/internal/domain/model"
 	"automation-engine/internal/repository"
 	"context"
-
-	"gorm.io/gorm"
 )
 
 type DefinitionService interface {
@@ -29,18 +27,26 @@ type DefinitionService interface {
 }
 
 type definitionService struct {
+	txManager     repository.TransactionManager
 	actionRepo    repository.ActionRepository
 	conditionRepo repository.ConditionRepository
 	operatorRepo  repository.OperatorRepository
 	unitRepo      repository.UnitRepository
 }
 
-func NewDefinitionService(db *gorm.DB) DefinitionService {
+func NewDefinitionService(
+	txManager repository.TransactionManager,
+	actionRepo repository.ActionRepository,
+	conditionRepo repository.ConditionRepository,
+	operatorRepo repository.OperatorRepository,
+	unitRepo repository.UnitRepository,
+) DefinitionService {
 	return &definitionService{
-		actionRepo:    repository.NewActionRepository(db),
-		conditionRepo: repository.NewConditionRepository(db),
-		operatorRepo:  repository.NewOperatorRepository(db),
-		unitRepo:      repository.NewUnitRepository(db),
+		txManager:     txManager,
+		actionRepo:    actionRepo,
+		conditionRepo: conditionRepo,
+		operatorRepo:  operatorRepo,
+		unitRepo:      unitRepo,
 	}
 }
 

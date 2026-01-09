@@ -7,6 +7,7 @@ import (
 
 	"automation-engine/internal/api"
 	"automation-engine/internal/middleware"
+	"automation-engine/internal/repository"
 	"automation-engine/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -59,12 +60,48 @@ func main() {
 		log.Fatalf("Failed to connect database: %v", err)
 	}
 
+	txManager := repository.NewTransactionManager(db)
+	conditionRepo := repository.NewConditionRepository(db)
+	operatorRepo := repository.NewOperatorRepository(db)
+	unitRepo := repository.NewUnitRepository(db)
+	actionRepo := repository.NewActionRepository(db)
+	conditionOperatorRepo := repository.NewConditionOperatorRepository(db)
+	conditionUnitRepo := repository.NewConditionUnitRepository(db)
+	conditionActionRepo := repository.NewConditionActionRepository(db)
+	automationRepo := repository.NewAutomationRepository(db)
+	automationActionRepo := repository.NewAutomationActionRepository(db)
+	automationConditionRepo := repository.NewAutomationConditionRepository(db)
+	automationExecutionRepo := repository.NewAutomationExecutionRepository(db)
+
 	// 2. ประกอบร่างจิ๊กซอว์ (Dependency Injection)
 	// DefinitionService จะสร้าง ActionRepository ภายในตัวมันเองตามที่คุณเขียนไว้
-	definitionService := service.NewDefinitionService(db)
-	policyService := service.NewPolicyService(db)
-	runService := service.NewRunService(db)
-	logService := service.NewLogService(db)
+	definitionService := service.NewDefinitionService(
+		txManager,
+		actionRepo,
+		conditionRepo,
+		operatorRepo,
+		unitRepo,
+	)
+	policyService := service.NewPolicyService(
+		txManager,
+		conditionRepo,
+		operatorRepo,
+		unitRepo,
+		actionRepo,
+		conditionOperatorRepo,
+		conditionUnitRepo,
+		conditionActionRepo,
+	)
+	runService := service.NewRunService(
+		txManager,
+		automationRepo,
+		automationActionRepo,
+		automationConditionRepo,
+	)
+	logService := service.NewLogService(
+		txManager,
+		automationExecutionRepo,
+	)
 
 	// สร้าง Handler โดยส่ง Service เข้าไป
 	authHandler := api.NewAuthHandler()
