@@ -12,16 +12,17 @@ const TableNameRunAutomationCondition = "run_automation_conditions"
 
 // RunAutomationCondition mapped from table <run_automation_conditions>
 type RunAutomationCondition struct {
-	AutomationConditionID string    `gorm:"column:automation_condition_id;primaryKey" json:"automation_condition_id"`
-	AutomationID          string    `gorm:"column:automation_id" json:"automation_id"`
-	ConditionID           string    `gorm:"column:condition_id" json:"condition_id"`
-	OperatorID            string    `gorm:"column:operator_id" json:"operator_id"`
-	Value                 string    `gorm:"column:value" json:"value"`
-	UnitID                string    `gorm:"column:unit_id" json:"unit_id"`
-	Created               time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
-	CreatedBy             string    `gorm:"column:created_by" json:"created_by"`
-	LastUpd               time.Time `gorm:"column:last_upd;not null;default:CURRENT_TIMESTAMP" json:"last_upd"`
-	LastUpdBy             string    `gorm:"column:last_upd_by" json:"last_upd_by"`
+	AutomationConditionID      string    `gorm:"column:automation_condition_id;primaryKey" json:"automation_condition_id"`
+	AutomationConditionGroupID string    `gorm:"column:automation_condition_group_id" json:"automation_condition_group_id"`
+	ConditionID                string    `gorm:"column:condition_id" json:"condition_id"`
+	OperatorID                 string    `gorm:"column:operator_id" json:"operator_id"`
+	Value                      string    `gorm:"column:value" json:"value"`
+	UnitID                     string    `gorm:"column:unit_id" json:"unit_id"`
+	ComparisonOperator         string    `gorm:"column:comparison_operator" json:"comparison_operator"`
+	Created                    time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
+	CreatedBy                  string    `gorm:"column:created_by" json:"created_by"`
+	LastUpd                    time.Time `gorm:"column:last_upd;not null;default:CURRENT_TIMESTAMP" json:"last_upd"`
+	LastUpdBy                  string    `gorm:"column:last_upd_by" json:"last_upd_by"`
 }
 
 // TableName RunAutomationCondition's table name

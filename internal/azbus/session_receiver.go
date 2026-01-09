@@ -19,7 +19,6 @@ import (
 type Message struct {
 	AutomationID string `json:"automation_id"`
 	Url          string `json:"url"`
-	Version      int32  `json:"version"`
 }
 
 type SessionReceiverOptions struct {
@@ -208,25 +207,21 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 		return fmt.Errorf("failed to get automation by ID: %w", err)
 	}
 
-	if automation.Version != body.Version {
-		// return fmt.Errorf("automation version mismatch: message version %d, automation version %d", body.Version, automation.Version)
-		return nil
-	}
 	if automation.IsActive != "Y" {
 		// return fmt.Errorf("automation is not active")
 		return nil
 	}
-	if automation.NextRun.After(time.Now()) {
+	if automation.NextRunTime.After(time.Now()) {
 		// return fmt.Errorf("automation is not due to run yet")
 		return nil
 	}
 
 	var next time.Time
-	switch automation.IntervalType {
+	switch automation.Frequency {
 	case "daily":
 		next, err = utils.CalculateDailyNextRun(
 			time.Now(),
-			automation.Time,
+			automation.StartDate,
 			time.Local,
 		)
 		if err != nil {
@@ -236,7 +231,7 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 	case "weekly":
 		next, err = utils.CalculateWeeklyNextRun(
 			time.Now(),
-			automation.Time,
+			automation.StartDate,
 			automation.DayOfWeek,
 			time.Local,
 		)
@@ -247,7 +242,7 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 	case "monthly":
 		next, err = utils.CalculateMonthlyNextRun(
 			time.Now(),
-			automation.Time,
+			automation.StartDate,
 			int(automation.DayOfMonth),
 			time.Local,
 		)
@@ -256,7 +251,7 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 		}
 		log.Printf("Next monthly run calculated: %s", next)
 	default:
-		return fmt.Errorf("unknown interval type: %s", automation.IntervalType)
+		return fmt.Errorf("unknown interval type: %s", automation.Frequency)
 	}
 
 	statusCode, _, err := httpclient.PostRequest(body.Url, msg.Body)
@@ -273,7 +268,7 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 
 	err = sr.runService.UpdateAutomationByID(sr.ctx, &model.RunAutomation{
 		AutomationID: body.AutomationID,
-		NextRun:      next,
+		NextRunTime:  next,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update automation next run: %w", err)

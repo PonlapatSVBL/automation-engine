@@ -29,11 +29,12 @@ func newRunAutomationCondition(db *gorm.DB, opts ...gen.DOOption) runAutomationC
 	tableName := _runAutomationCondition.runAutomationConditionDo.TableName()
 	_runAutomationCondition.ALL = field.NewAsterisk(tableName)
 	_runAutomationCondition.AutomationConditionID = field.NewString(tableName, "automation_condition_id")
-	_runAutomationCondition.AutomationID = field.NewString(tableName, "automation_id")
+	_runAutomationCondition.AutomationConditionGroupID = field.NewString(tableName, "automation_condition_group_id")
 	_runAutomationCondition.ConditionID = field.NewString(tableName, "condition_id")
 	_runAutomationCondition.OperatorID = field.NewString(tableName, "operator_id")
 	_runAutomationCondition.Value = field.NewString(tableName, "value")
 	_runAutomationCondition.UnitID = field.NewString(tableName, "unit_id")
+	_runAutomationCondition.ComparisonOperator = field.NewString(tableName, "comparison_operator")
 	_runAutomationCondition.Created = field.NewTime(tableName, "created")
 	_runAutomationCondition.CreatedBy = field.NewString(tableName, "created_by")
 	_runAutomationCondition.LastUpd = field.NewTime(tableName, "last_upd")
@@ -47,17 +48,18 @@ func newRunAutomationCondition(db *gorm.DB, opts ...gen.DOOption) runAutomationC
 type runAutomationCondition struct {
 	runAutomationConditionDo runAutomationConditionDo
 
-	ALL                   field.Asterisk
-	AutomationConditionID field.String
-	AutomationID          field.String
-	ConditionID           field.String
-	OperatorID            field.String
-	Value                 field.String
-	UnitID                field.String
-	Created               field.Time
-	CreatedBy             field.String
-	LastUpd               field.Time
-	LastUpdBy             field.String
+	ALL                        field.Asterisk
+	AutomationConditionID      field.String
+	AutomationConditionGroupID field.String
+	ConditionID                field.String
+	OperatorID                 field.String
+	Value                      field.String
+	UnitID                     field.String
+	ComparisonOperator         field.String
+	Created                    field.Time
+	CreatedBy                  field.String
+	LastUpd                    field.Time
+	LastUpdBy                  field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -75,11 +77,12 @@ func (r runAutomationCondition) As(alias string) *runAutomationCondition {
 func (r *runAutomationCondition) updateTableName(table string) *runAutomationCondition {
 	r.ALL = field.NewAsterisk(table)
 	r.AutomationConditionID = field.NewString(table, "automation_condition_id")
-	r.AutomationID = field.NewString(table, "automation_id")
+	r.AutomationConditionGroupID = field.NewString(table, "automation_condition_group_id")
 	r.ConditionID = field.NewString(table, "condition_id")
 	r.OperatorID = field.NewString(table, "operator_id")
 	r.Value = field.NewString(table, "value")
 	r.UnitID = field.NewString(table, "unit_id")
+	r.ComparisonOperator = field.NewString(table, "comparison_operator")
 	r.Created = field.NewTime(table, "created")
 	r.CreatedBy = field.NewString(table, "created_by")
 	r.LastUpd = field.NewTime(table, "last_upd")
@@ -112,13 +115,14 @@ func (r *runAutomationCondition) GetFieldByName(fieldName string) (field.OrderEx
 }
 
 func (r *runAutomationCondition) fillFieldMap() {
-	r.fieldMap = make(map[string]field.Expr, 10)
+	r.fieldMap = make(map[string]field.Expr, 11)
 	r.fieldMap["automation_condition_id"] = r.AutomationConditionID
-	r.fieldMap["automation_id"] = r.AutomationID
+	r.fieldMap["automation_condition_group_id"] = r.AutomationConditionGroupID
 	r.fieldMap["condition_id"] = r.ConditionID
 	r.fieldMap["operator_id"] = r.OperatorID
 	r.fieldMap["value"] = r.Value
 	r.fieldMap["unit_id"] = r.UnitID
+	r.fieldMap["comparison_operator"] = r.ComparisonOperator
 	r.fieldMap["created"] = r.Created
 	r.fieldMap["created_by"] = r.CreatedBy
 	r.fieldMap["last_upd"] = r.LastUpd

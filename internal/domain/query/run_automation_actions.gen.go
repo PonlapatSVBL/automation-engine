@@ -32,7 +32,7 @@ func newRunAutomationAction(db *gorm.DB, opts ...gen.DOOption) runAutomationActi
 	_runAutomationAction.AutomationID = field.NewString(tableName, "automation_id")
 	_runAutomationAction.ActionID = field.NewString(tableName, "action_id")
 	_runAutomationAction.ConfigJSON = field.NewString(tableName, "config_json")
-	_runAutomationAction.SortOrder = field.NewInt64(tableName, "sort_order")
+	_runAutomationAction.SortOrder = field.NewInt32(tableName, "sort_order")
 	_runAutomationAction.Created = field.NewTime(tableName, "created")
 	_runAutomationAction.CreatedBy = field.NewString(tableName, "created_by")
 	_runAutomationAction.LastUpd = field.NewTime(tableName, "last_upd")
@@ -51,7 +51,7 @@ type runAutomationAction struct {
 	AutomationID       field.String
 	ActionID           field.String
 	ConfigJSON         field.String
-	SortOrder          field.Int64
+	SortOrder          field.Int32
 	Created            field.Time
 	CreatedBy          field.String
 	LastUpd            field.Time
@@ -76,7 +76,7 @@ func (r *runAutomationAction) updateTableName(table string) *runAutomationAction
 	r.AutomationID = field.NewString(table, "automation_id")
 	r.ActionID = field.NewString(table, "action_id")
 	r.ConfigJSON = field.NewString(table, "config_json")
-	r.SortOrder = field.NewInt64(table, "sort_order")
+	r.SortOrder = field.NewInt32(table, "sort_order")
 	r.Created = field.NewTime(table, "created")
 	r.CreatedBy = field.NewString(table, "created_by")
 	r.LastUpd = field.NewTime(table, "last_upd")

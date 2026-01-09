@@ -11,6 +11,9 @@ import (
 type RunService interface {
 	GetAutomationByID(ctx context.Context, automationID string) (*model.RunAutomation, error)
 	UpdateAutomationByID(ctx context.Context, automation *model.RunAutomation) error
+	FetchAndLockTasks(ctx context.Context, limit int) ([]*model.RunAutomation, error)
+	MarkTasksCompleted(ctx context.Context, taskIDs []string) error
+	BulkUpdateNextRun(ctx context.Context, tasks []*model.RunAutomation) error
 }
 
 type runService struct {
@@ -43,4 +46,56 @@ func (s *runService) UpdateAutomationByID(ctx context.Context, automation *model
 	}
 
 	return nil
+}
+
+func (s *runService) FetchAndLockTasks(ctx context.Context, limit int) ([]*model.RunAutomation, error) {
+	var tasks []*model.RunAutomation
+
+	err := s.automationRepo.WithTransaction(ctx, func(txRepo repository.AutomationRepository) error {
+		// 1. ดึงงานและ Lock แถวไว้
+		lockedTasks, err := txRepo.FetchAndLock(ctx, limit)
+		if err != nil {
+			return err
+		}
+
+		if len(lockedTasks) == 0 {
+			return nil
+		}
+
+		// 2. เก็บ IDs เพื่อไปอัปเดตสถานะ
+		var ids []string
+		for _, t := range lockedTasks {
+			ids = append(ids, t.AutomationID)
+		}
+
+		// 3. เปลี่ยนสถานะเป็น PROCESSING ทันที (จองงาน)
+		if err := txRepo.UpdateStatusBatch(ctx, ids, "PROCESSING"); err != nil {
+			return err
+		}
+
+		tasks = lockedTasks
+		return nil
+	})
+
+	return tasks, err
+}
+
+func (s *runService) MarkTasksCompleted(ctx context.Context, taskIDs []string) error {
+	if len(taskIDs) == 0 {
+		return nil
+	}
+
+	if err := s.automationRepo.UpdateStatusBatch(ctx, taskIDs, "COMPLETE"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *runService) BulkUpdateNextRun(ctx context.Context, tasks []*model.RunAutomation) error {
+	if len(tasks) == 0 {
+		return nil
+	}
+
+	return s.automationRepo.BulkUpdateNextRun(ctx, tasks)
 }

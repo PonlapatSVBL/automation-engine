@@ -15,7 +15,7 @@ type DefOperator struct {
 	OperatorID     string    `gorm:"column:operator_id;primaryKey" json:"operator_id"`
 	OperatorSymbol string    `gorm:"column:operator_symbol" json:"operator_symbol"`
 	OperatorName   string    `gorm:"column:operator_name" json:"operator_name"`
-	Status         string    `gorm:"column:status;not null" json:"status"`
+	Status         string    `gorm:"column:status;not null;default:ACTIVE" json:"status"`
 	Created        time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
 	CreatedBy      string    `gorm:"column:created_by" json:"created_by"`
 	LastUpd        time.Time `gorm:"column:last_upd;not null;default:CURRENT_TIMESTAMP" json:"last_upd"`

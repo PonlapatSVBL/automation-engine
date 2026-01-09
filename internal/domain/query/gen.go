@@ -16,99 +16,94 @@ import (
 )
 
 var (
-	Q                       = new(Query)
-	DefAction               *defAction
-	DefCondition            *defCondition
-	DefGroup                *defGroup
-	DefOperator             *defOperator
-	DefUnit                 *defUnit
-	LogAutomationExecution  *logAutomationExecution
-	PolicyConditionAction   *policyConditionAction
-	PolicyConditionOperator *policyConditionOperator
-	PolicyConditionUnit     *policyConditionUnit
-	PolicyGroupAction       *policyGroupAction
-	PolicyGroupCondition    *policyGroupCondition
-	RunAutomation           *runAutomation
-	RunAutomationAction     *runAutomationAction
-	RunAutomationCondition  *runAutomationCondition
+	Q                           = new(Query)
+	DefAction                   *defAction
+	DefCondition                *defCondition
+	DefOperator                 *defOperator
+	DefUnit                     *defUnit
+	LogAutomationExecution      *logAutomationExecution
+	PolicyConditionAction       *policyConditionAction
+	PolicyConditionOperator     *policyConditionOperator
+	PolicyConditionUnit         *policyConditionUnit
+	RunAutomation               *runAutomation
+	RunAutomationAction         *runAutomationAction
+	RunAutomationCondition      *runAutomationCondition
+	RunAutomationConditionGroup *runAutomationConditionGroup
+	RunAutomationTarget         *runAutomationTarget
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	DefAction = &Q.DefAction
 	DefCondition = &Q.DefCondition
-	DefGroup = &Q.DefGroup
 	DefOperator = &Q.DefOperator
 	DefUnit = &Q.DefUnit
 	LogAutomationExecution = &Q.LogAutomationExecution
 	PolicyConditionAction = &Q.PolicyConditionAction
 	PolicyConditionOperator = &Q.PolicyConditionOperator
 	PolicyConditionUnit = &Q.PolicyConditionUnit
-	PolicyGroupAction = &Q.PolicyGroupAction
-	PolicyGroupCondition = &Q.PolicyGroupCondition
 	RunAutomation = &Q.RunAutomation
 	RunAutomationAction = &Q.RunAutomationAction
 	RunAutomationCondition = &Q.RunAutomationCondition
+	RunAutomationConditionGroup = &Q.RunAutomationConditionGroup
+	RunAutomationTarget = &Q.RunAutomationTarget
 }
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:                      db,
-		DefAction:               newDefAction(db, opts...),
-		DefCondition:            newDefCondition(db, opts...),
-		DefGroup:                newDefGroup(db, opts...),
-		DefOperator:             newDefOperator(db, opts...),
-		DefUnit:                 newDefUnit(db, opts...),
-		LogAutomationExecution:  newLogAutomationExecution(db, opts...),
-		PolicyConditionAction:   newPolicyConditionAction(db, opts...),
-		PolicyConditionOperator: newPolicyConditionOperator(db, opts...),
-		PolicyConditionUnit:     newPolicyConditionUnit(db, opts...),
-		PolicyGroupAction:       newPolicyGroupAction(db, opts...),
-		PolicyGroupCondition:    newPolicyGroupCondition(db, opts...),
-		RunAutomation:           newRunAutomation(db, opts...),
-		RunAutomationAction:     newRunAutomationAction(db, opts...),
-		RunAutomationCondition:  newRunAutomationCondition(db, opts...),
+		db:                          db,
+		DefAction:                   newDefAction(db, opts...),
+		DefCondition:                newDefCondition(db, opts...),
+		DefOperator:                 newDefOperator(db, opts...),
+		DefUnit:                     newDefUnit(db, opts...),
+		LogAutomationExecution:      newLogAutomationExecution(db, opts...),
+		PolicyConditionAction:       newPolicyConditionAction(db, opts...),
+		PolicyConditionOperator:     newPolicyConditionOperator(db, opts...),
+		PolicyConditionUnit:         newPolicyConditionUnit(db, opts...),
+		RunAutomation:               newRunAutomation(db, opts...),
+		RunAutomationAction:         newRunAutomationAction(db, opts...),
+		RunAutomationCondition:      newRunAutomationCondition(db, opts...),
+		RunAutomationConditionGroup: newRunAutomationConditionGroup(db, opts...),
+		RunAutomationTarget:         newRunAutomationTarget(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	DefAction               defAction
-	DefCondition            defCondition
-	DefGroup                defGroup
-	DefOperator             defOperator
-	DefUnit                 defUnit
-	LogAutomationExecution  logAutomationExecution
-	PolicyConditionAction   policyConditionAction
-	PolicyConditionOperator policyConditionOperator
-	PolicyConditionUnit     policyConditionUnit
-	PolicyGroupAction       policyGroupAction
-	PolicyGroupCondition    policyGroupCondition
-	RunAutomation           runAutomation
-	RunAutomationAction     runAutomationAction
-	RunAutomationCondition  runAutomationCondition
+	DefAction                   defAction
+	DefCondition                defCondition
+	DefOperator                 defOperator
+	DefUnit                     defUnit
+	LogAutomationExecution      logAutomationExecution
+	PolicyConditionAction       policyConditionAction
+	PolicyConditionOperator     policyConditionOperator
+	PolicyConditionUnit         policyConditionUnit
+	RunAutomation               runAutomation
+	RunAutomationAction         runAutomationAction
+	RunAutomationCondition      runAutomationCondition
+	RunAutomationConditionGroup runAutomationConditionGroup
+	RunAutomationTarget         runAutomationTarget
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:                      db,
-		DefAction:               q.DefAction.clone(db),
-		DefCondition:            q.DefCondition.clone(db),
-		DefGroup:                q.DefGroup.clone(db),
-		DefOperator:             q.DefOperator.clone(db),
-		DefUnit:                 q.DefUnit.clone(db),
-		LogAutomationExecution:  q.LogAutomationExecution.clone(db),
-		PolicyConditionAction:   q.PolicyConditionAction.clone(db),
-		PolicyConditionOperator: q.PolicyConditionOperator.clone(db),
-		PolicyConditionUnit:     q.PolicyConditionUnit.clone(db),
-		PolicyGroupAction:       q.PolicyGroupAction.clone(db),
-		PolicyGroupCondition:    q.PolicyGroupCondition.clone(db),
-		RunAutomation:           q.RunAutomation.clone(db),
-		RunAutomationAction:     q.RunAutomationAction.clone(db),
-		RunAutomationCondition:  q.RunAutomationCondition.clone(db),
+		db:                          db,
+		DefAction:                   q.DefAction.clone(db),
+		DefCondition:                q.DefCondition.clone(db),
+		DefOperator:                 q.DefOperator.clone(db),
+		DefUnit:                     q.DefUnit.clone(db),
+		LogAutomationExecution:      q.LogAutomationExecution.clone(db),
+		PolicyConditionAction:       q.PolicyConditionAction.clone(db),
+		PolicyConditionOperator:     q.PolicyConditionOperator.clone(db),
+		PolicyConditionUnit:         q.PolicyConditionUnit.clone(db),
+		RunAutomation:               q.RunAutomation.clone(db),
+		RunAutomationAction:         q.RunAutomationAction.clone(db),
+		RunAutomationCondition:      q.RunAutomationCondition.clone(db),
+		RunAutomationConditionGroup: q.RunAutomationConditionGroup.clone(db),
+		RunAutomationTarget:         q.RunAutomationTarget.clone(db),
 	}
 }
 
@@ -122,57 +117,54 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:                      db,
-		DefAction:               q.DefAction.replaceDB(db),
-		DefCondition:            q.DefCondition.replaceDB(db),
-		DefGroup:                q.DefGroup.replaceDB(db),
-		DefOperator:             q.DefOperator.replaceDB(db),
-		DefUnit:                 q.DefUnit.replaceDB(db),
-		LogAutomationExecution:  q.LogAutomationExecution.replaceDB(db),
-		PolicyConditionAction:   q.PolicyConditionAction.replaceDB(db),
-		PolicyConditionOperator: q.PolicyConditionOperator.replaceDB(db),
-		PolicyConditionUnit:     q.PolicyConditionUnit.replaceDB(db),
-		PolicyGroupAction:       q.PolicyGroupAction.replaceDB(db),
-		PolicyGroupCondition:    q.PolicyGroupCondition.replaceDB(db),
-		RunAutomation:           q.RunAutomation.replaceDB(db),
-		RunAutomationAction:     q.RunAutomationAction.replaceDB(db),
-		RunAutomationCondition:  q.RunAutomationCondition.replaceDB(db),
+		db:                          db,
+		DefAction:                   q.DefAction.replaceDB(db),
+		DefCondition:                q.DefCondition.replaceDB(db),
+		DefOperator:                 q.DefOperator.replaceDB(db),
+		DefUnit:                     q.DefUnit.replaceDB(db),
+		LogAutomationExecution:      q.LogAutomationExecution.replaceDB(db),
+		PolicyConditionAction:       q.PolicyConditionAction.replaceDB(db),
+		PolicyConditionOperator:     q.PolicyConditionOperator.replaceDB(db),
+		PolicyConditionUnit:         q.PolicyConditionUnit.replaceDB(db),
+		RunAutomation:               q.RunAutomation.replaceDB(db),
+		RunAutomationAction:         q.RunAutomationAction.replaceDB(db),
+		RunAutomationCondition:      q.RunAutomationCondition.replaceDB(db),
+		RunAutomationConditionGroup: q.RunAutomationConditionGroup.replaceDB(db),
+		RunAutomationTarget:         q.RunAutomationTarget.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	DefAction               IDefActionDo
-	DefCondition            IDefConditionDo
-	DefGroup                IDefGroupDo
-	DefOperator             IDefOperatorDo
-	DefUnit                 IDefUnitDo
-	LogAutomationExecution  ILogAutomationExecutionDo
-	PolicyConditionAction   IPolicyConditionActionDo
-	PolicyConditionOperator IPolicyConditionOperatorDo
-	PolicyConditionUnit     IPolicyConditionUnitDo
-	PolicyGroupAction       IPolicyGroupActionDo
-	PolicyGroupCondition    IPolicyGroupConditionDo
-	RunAutomation           IRunAutomationDo
-	RunAutomationAction     IRunAutomationActionDo
-	RunAutomationCondition  IRunAutomationConditionDo
+	DefAction                   IDefActionDo
+	DefCondition                IDefConditionDo
+	DefOperator                 IDefOperatorDo
+	DefUnit                     IDefUnitDo
+	LogAutomationExecution      ILogAutomationExecutionDo
+	PolicyConditionAction       IPolicyConditionActionDo
+	PolicyConditionOperator     IPolicyConditionOperatorDo
+	PolicyConditionUnit         IPolicyConditionUnitDo
+	RunAutomation               IRunAutomationDo
+	RunAutomationAction         IRunAutomationActionDo
+	RunAutomationCondition      IRunAutomationConditionDo
+	RunAutomationConditionGroup IRunAutomationConditionGroupDo
+	RunAutomationTarget         IRunAutomationTargetDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		DefAction:               q.DefAction.WithContext(ctx),
-		DefCondition:            q.DefCondition.WithContext(ctx),
-		DefGroup:                q.DefGroup.WithContext(ctx),
-		DefOperator:             q.DefOperator.WithContext(ctx),
-		DefUnit:                 q.DefUnit.WithContext(ctx),
-		LogAutomationExecution:  q.LogAutomationExecution.WithContext(ctx),
-		PolicyConditionAction:   q.PolicyConditionAction.WithContext(ctx),
-		PolicyConditionOperator: q.PolicyConditionOperator.WithContext(ctx),
-		PolicyConditionUnit:     q.PolicyConditionUnit.WithContext(ctx),
-		PolicyGroupAction:       q.PolicyGroupAction.WithContext(ctx),
-		PolicyGroupCondition:    q.PolicyGroupCondition.WithContext(ctx),
-		RunAutomation:           q.RunAutomation.WithContext(ctx),
-		RunAutomationAction:     q.RunAutomationAction.WithContext(ctx),
-		RunAutomationCondition:  q.RunAutomationCondition.WithContext(ctx),
+		DefAction:                   q.DefAction.WithContext(ctx),
+		DefCondition:                q.DefCondition.WithContext(ctx),
+		DefOperator:                 q.DefOperator.WithContext(ctx),
+		DefUnit:                     q.DefUnit.WithContext(ctx),
+		LogAutomationExecution:      q.LogAutomationExecution.WithContext(ctx),
+		PolicyConditionAction:       q.PolicyConditionAction.WithContext(ctx),
+		PolicyConditionOperator:     q.PolicyConditionOperator.WithContext(ctx),
+		PolicyConditionUnit:         q.PolicyConditionUnit.WithContext(ctx),
+		RunAutomation:               q.RunAutomation.WithContext(ctx),
+		RunAutomationAction:         q.RunAutomationAction.WithContext(ctx),
+		RunAutomationCondition:      q.RunAutomationCondition.WithContext(ctx),
+		RunAutomationConditionGroup: q.RunAutomationConditionGroup.WithContext(ctx),
+		RunAutomationTarget:         q.RunAutomationTarget.WithContext(ctx),
 	}
 }
 

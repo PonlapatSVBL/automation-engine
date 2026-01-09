@@ -13,16 +13,17 @@ const TableNameRunAutomation = "run_automations"
 // RunAutomation mapped from table <run_automations>
 type RunAutomation struct {
 	AutomationID            string    `gorm:"column:automation_id;primaryKey" json:"automation_id"`
-	Version                 int32     `gorm:"column:version;not null;default:1" json:"version"`
 	InstanceServerID        string    `gorm:"column:instance_server_id" json:"instance_server_id"`
 	InstanceServerChannelID string    `gorm:"column:instance_server_channel_id" json:"instance_server_channel_id"`
 	AutomationName          string    `gorm:"column:automation_name" json:"automation_name"`
-	IntervalType            string    `gorm:"column:interval_type;not null" json:"interval_type"`
-	Time                    time.Time `gorm:"column:time;not null" json:"time"`
-	DayOfWeek               string    `gorm:"column:day_of_week;not null" json:"day_of_week"`
-	DayOfMonth              int64     `gorm:"column:day_of_month;not null" json:"day_of_month"`
+	Frequency               string    `gorm:"column:frequency;not null" json:"frequency"`
+	StartDate               time.Time `gorm:"column:start_date;not null" json:"start_date"`
+	DayOfWeek               string    `gorm:"column:day_of_week" json:"day_of_week"`
+	DayOfMonth              int32     `gorm:"column:day_of_month" json:"day_of_month"`
+	MonthOfYear             int32     `gorm:"column:month_of_year" json:"month_of_year"`
+	Status                  string    `gorm:"column:status" json:"status"`
+	NextRunTime             time.Time `gorm:"column:next_run_time" json:"next_run_time"`
 	IsActive                string    `gorm:"column:is_active;not null;default:Y" json:"is_active"`
-	NextRun                 time.Time `gorm:"column:next_run" json:"next_run"`
 	Created                 time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
 	CreatedBy               string    `gorm:"column:created_by" json:"created_by"`
 	LastUpd                 time.Time `gorm:"column:last_upd;not null;default:CURRENT_TIMESTAMP" json:"last_upd"`

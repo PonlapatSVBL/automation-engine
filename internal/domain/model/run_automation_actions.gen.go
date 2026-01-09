@@ -16,7 +16,7 @@ type RunAutomationAction struct {
 	AutomationID       string    `gorm:"column:automation_id" json:"automation_id"`
 	ActionID           string    `gorm:"column:action_id" json:"action_id"`
 	ConfigJSON         string    `gorm:"column:config_json" json:"config_json"`
-	SortOrder          int64     `gorm:"column:sort_order;not null" json:"sort_order"`
+	SortOrder          int32     `gorm:"column:sort_order;not null" json:"sort_order"`
 	Created            time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
 	CreatedBy          string    `gorm:"column:created_by" json:"created_by"`
 	LastUpd            time.Time `gorm:"column:last_upd;not null;default:CURRENT_TIMESTAMP" json:"last_upd"`

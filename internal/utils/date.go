@@ -6,7 +6,12 @@ import (
 	"time"
 )
 
-func CalculateDailyNextRun(now time.Time, runTime time.Time, loc *time.Location) (time.Time, error) {
+func CalculateDailyNextRun(
+	now time.Time,
+	runTime time.Time,
+	loc *time.Location,
+) (time.Time, error) {
+
 	h, m, s := runTime.Hour(), runTime.Minute(), runTime.Second()
 
 	candidate := time.Date(

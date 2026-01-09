@@ -14,8 +14,8 @@ const TableNameLogAutomationExecution = "log_automation_executions"
 type LogAutomationExecution struct {
 	LogID            string    `gorm:"column:log_id;primaryKey" json:"log_id"`
 	AutomationID     string    `gorm:"column:automation_id" json:"automation_id"`
-	Status           string    `gorm:"column:status;not null" json:"status"`
-	TriggeredAt      time.Time `gorm:"column:triggered_at;not null" json:"triggered_at"`
+	Status           string    `gorm:"column:status;not null;default:QUEUED" json:"status"`
+	TriggeredAt      time.Time `gorm:"column:triggered_at;not null;default:CURRENT_TIMESTAMP" json:"triggered_at"`
 	FinishedAt       time.Time `gorm:"column:finished_at;not null" json:"finished_at"`
 	ConfigSnapshot   string    `gorm:"column:config_snapshot" json:"config_snapshot"`
 	ExecutionDetails string    `gorm:"column:execution_details" json:"execution_details"`

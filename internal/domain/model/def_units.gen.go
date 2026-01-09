@@ -15,7 +15,7 @@ type DefUnit struct {
 	UnitID    string    `gorm:"column:unit_id;primaryKey" json:"unit_id"`
 	UnitCode  string    `gorm:"column:unit_code" json:"unit_code"`
 	UnitName  string    `gorm:"column:unit_name" json:"unit_name"`
-	Status    string    `gorm:"column:status;not null" json:"status"`
+	Status    string    `gorm:"column:status;not null;default:ACTIVE" json:"status"`
 	Created   time.Time `gorm:"column:created;not null;default:CURRENT_TIMESTAMP" json:"created"`
 	CreatedBy string    `gorm:"column:created_by" json:"created_by"`
 	LastUpd   time.Time `gorm:"column:last_upd;not null;default:CURRENT_TIMESTAMP" json:"last_upd"`
