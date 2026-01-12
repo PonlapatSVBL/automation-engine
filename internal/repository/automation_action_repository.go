@@ -1,14 +1,18 @@
 package repository
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type AutomationActionRepository interface {
 }
 
 type automationActionRepository struct {
-	db *gorm.DB
+	BaseRepository
 }
 
 func NewAutomationActionRepository(db *gorm.DB) AutomationActionRepository {
-	return &automationActionRepository{db: db}
+	return &automationActionRepository{
+		BaseRepository: NewBaseRepository(db),
+	}
 }

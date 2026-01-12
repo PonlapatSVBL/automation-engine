@@ -17,39 +17,41 @@ type ActionRepository interface {
 }
 
 type actionRepository struct {
-	db *gorm.DB
+	BaseRepository
 }
 
 func NewActionRepository(db *gorm.DB) ActionRepository {
-	return &actionRepository{db: db}
+	return &actionRepository{
+		BaseRepository: NewBaseRepository(db),
+	}
 }
 
 func (r *actionRepository) GetByID(ctx context.Context, id string) (*model.DefAction, error) {
-	q := query.Use(r.db).DefAction
+	q := query.Use(r.Executor(ctx)).DefAction
 	return q.WithContext(ctx).Where(q.ActionID.Eq(id)).First()
 }
 
 func (r *actionRepository) Create(ctx context.Context, action *model.DefAction) error {
-	q := query.Use(r.db).DefAction
+	q := query.Use(r.Executor(ctx)).DefAction
 	return q.WithContext(ctx).Create(action)
 }
 
 func (r *actionRepository) Update(ctx context.Context, action *model.DefAction) error {
-	q := query.Use(r.db).DefAction
+	q := query.Use(r.Executor(ctx)).DefAction
 	// ใช้ Select("*") เพื่อบังคับให้อัปเดตทุกฟิลด์รวมถึงค่าว่าง หรือระบุฟิลด์ที่ต้องการ
 	_, err := q.WithContext(ctx).Where(q.ActionID.Eq(action.ActionID)).Updates(action)
 	return err
 }
 
 func (r *actionRepository) Delete(ctx context.Context, id string) error {
-	q := query.Use(r.db).DefAction
+	q := query.Use(r.Executor(ctx)).DefAction
 	// GORM Gen จะจัดการ Soft Delete ให้โดยอัตโนมัติหากใน Model มีฟิลด์ DeletedAt
 	_, err := q.WithContext(ctx).Where(q.ActionID.Eq(id)).Delete()
 	return err
 }
 
 func (r *actionRepository) List(ctx context.Context, filter model.DefAction) ([]*model.DefAction, error) {
-	q := query.Use(r.db).DefAction
+	q := query.Use(r.Executor(ctx)).DefAction
 	db := q.WithContext(ctx)
 
 	// Dynamic Filtering

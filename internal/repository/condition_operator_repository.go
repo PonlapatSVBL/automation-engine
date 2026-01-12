@@ -12,38 +12,40 @@ type ConditionOperatorRepository interface {
 	List(ctx context.Context, filter model.PolicyConditionOperator) ([]*model.PolicyConditionOperator, error)
 	DeleteByConditionID(ctx context.Context, conditionID string) error
 	BulkCreate(ctx context.Context, ops []*model.PolicyConditionOperator) error
-	WithTransaction(ctx context.Context, fn func(txRepo ConditionOperatorRepository) error) error
+	// WithTransaction(ctx context.Context, fn func(txRepo ConditionOperatorRepository) error) error
 }
 
 type conditionOperatorRepository struct {
-	db *gorm.DB
+	BaseRepository
 }
 
 func NewConditionOperatorRepository(db *gorm.DB) ConditionOperatorRepository {
-	return &conditionOperatorRepository{db: db}
+	return &conditionOperatorRepository{
+		BaseRepository: NewBaseRepository(db),
+	}
 }
 
 func (r *conditionOperatorRepository) List(ctx context.Context, filter model.PolicyConditionOperator) ([]*model.PolicyConditionOperator, error) {
-	q := query.Use(r.db).PolicyConditionOperator
+	q := query.Use(r.Executor(ctx)).PolicyConditionOperator
 	db := q.WithContext(ctx)
 
 	return db.Find()
 }
 
 func (r *conditionOperatorRepository) DeleteByConditionID(ctx context.Context, conditionID string) error {
-	return r.db.WithContext(ctx).
+	return r.Executor(ctx).
 		Where("condition_id = ?", conditionID).
 		Delete(&model.PolicyConditionOperator{}).Error
 }
 
 func (r *conditionOperatorRepository) BulkCreate(ctx context.Context, ops []*model.PolicyConditionOperator) error {
-	return r.db.WithContext(ctx).
+	return r.Executor(ctx).
 		Create(&ops).Error
 }
 
-func (r *conditionOperatorRepository) WithTransaction(ctx context.Context, fn func(txRepo ConditionOperatorRepository) error) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+/* func (r *conditionOperatorRepository) WithTransaction(ctx context.Context, fn func(txRepo ConditionOperatorRepository) error) error {
+	return r.executor(ctx).Transaction(func(tx *gorm.DB) error {
 		txRepo := NewConditionOperatorRepository(tx)
 		return fn(txRepo)
 	})
-}
+} */

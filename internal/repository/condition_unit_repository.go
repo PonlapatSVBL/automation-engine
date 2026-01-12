@@ -16,33 +16,35 @@ type ConditionUnitRepository interface {
 }
 
 type conditionUnitRepository struct {
-	db *gorm.DB
+	BaseRepository
 }
 
 func NewConditionUnitRepository(db *gorm.DB) ConditionUnitRepository {
-	return &conditionUnitRepository{db: db}
+	return &conditionUnitRepository{
+		BaseRepository: NewBaseRepository(db),
+	}
 }
 
 func (r *conditionUnitRepository) List(ctx context.Context, filter model.PolicyConditionUnit) ([]*model.PolicyConditionUnit, error) {
-	q := query.Use(r.db).PolicyConditionUnit
+	q := query.Use(r.Executor(ctx)).PolicyConditionUnit
 	db := q.WithContext(ctx)
 
 	return db.Find()
 }
 
 func (r *conditionUnitRepository) DeleteByConditionID(ctx context.Context, conditionID string) error {
-	return r.db.WithContext(ctx).
+	return r.Executor(ctx).
 		Where("condition_id = ?", conditionID).
 		Delete(&model.PolicyConditionUnit{}).Error
 }
 
 func (r *conditionUnitRepository) BulkCreate(ctx context.Context, ops []*model.PolicyConditionUnit) error {
-	return r.db.WithContext(ctx).
+	return r.Executor(ctx).
 		Create(&ops).Error
 }
 
 func (r *conditionUnitRepository) WithTransaction(ctx context.Context, fn func(txRepo ConditionUnitRepository) error) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return r.Executor(ctx).Transaction(func(tx *gorm.DB) error {
 		txRepo := NewConditionUnitRepository(tx)
 		return fn(txRepo)
 	})

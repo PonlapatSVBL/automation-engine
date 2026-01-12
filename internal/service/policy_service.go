@@ -45,6 +45,7 @@ func NewPolicyService(
 	conditionActionRepo repository.ConditionActionRepository,
 ) PolicyService {
 	return &policyService{
+		txManager:             txManager,
 		conditionRepo:         conditionRepo,
 		operatorRepo:          operatorRepo,
 		unitRepo:              unitRepo,
@@ -103,7 +104,29 @@ func (s *policyService) GetPolicyRuleConfig(ctx context.Context) (GetPolicyRuleC
 }
 
 func (s *policyService) SetConditionOperators(ctx context.Context, conditionID string, operators []*model.PolicyConditionOperator, createdBy string) error {
-	return s.conditionOperatorRepo.WithTransaction(ctx, func(txRepo repository.ConditionOperatorRepository) error {
+	return s.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		// 1. delete old rows
+		if err := s.conditionOperatorRepo.DeleteByConditionID(txCtx, conditionID); err != nil {
+			return err
+		}
+
+		// 2. prepare data
+		for _, op := range operators {
+			op.ConditionID = conditionID
+			op.CreatedBy = createdBy
+		}
+
+		// 3. bulk insert
+		if len(operators) > 0 {
+			if err := s.conditionOperatorRepo.BulkCreate(txCtx, operators); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	/* return s.conditionOperatorRepo.WithTransaction(ctx, func(txRepo repository.ConditionOperatorRepository) error {
 		// 1. delete old rows
 		if err := txRepo.DeleteByConditionID(ctx, conditionID); err != nil {
 			return err
@@ -123,11 +146,33 @@ func (s *policyService) SetConditionOperators(ctx context.Context, conditionID s
 		}
 
 		return nil
-	})
+	}) */
 }
 
 func (s *policyService) SetConditionUnits(ctx context.Context, conditionID string, units []*model.PolicyConditionUnit, createdBy string) error {
-	return s.conditionUnitRepo.WithTransaction(ctx, func(txRepo repository.ConditionUnitRepository) error {
+	return s.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		// 1. delete old rows
+		if err := s.conditionUnitRepo.DeleteByConditionID(txCtx, conditionID); err != nil {
+			return err
+		}
+
+		// 2. prepare data
+		for _, unit := range units {
+			unit.ConditionID = conditionID
+			unit.CreatedBy = createdBy
+		}
+
+		// 3. bulk insert
+		if len(units) > 0 {
+			if err := s.conditionUnitRepo.BulkCreate(txCtx, units); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	/* return s.conditionUnitRepo.WithTransaction(ctx, func(txRepo repository.ConditionUnitRepository) error {
 		// 1. delete old rows
 		if err := txRepo.DeleteByConditionID(ctx, conditionID); err != nil {
 			return err
@@ -147,11 +192,33 @@ func (s *policyService) SetConditionUnits(ctx context.Context, conditionID strin
 		}
 
 		return nil
-	})
+	}) */
 }
 
 func (s *policyService) SetConditionActions(ctx context.Context, conditionID string, actions []*model.PolicyConditionAction, createdBy string) error {
-	return s.conditionActionRepo.WithTransaction(ctx, func(txRepo repository.ConditionActionRepository) error {
+	return s.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		// 1. delete old rows
+		if err := s.conditionActionRepo.DeleteByConditionID(txCtx, conditionID); err != nil {
+			return err
+		}
+
+		// 2. prepare data
+		for _, action := range actions {
+			action.ConditionID = conditionID
+			action.CreatedBy = createdBy
+		}
+
+		// 3. bulk insert
+		if len(actions) > 0 {
+			if err := s.conditionActionRepo.BulkCreate(txCtx, actions); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	/* return s.conditionActionRepo.WithTransaction(ctx, func(txRepo repository.ConditionActionRepository) error {
 		// 1. delete old rows
 		if err := txRepo.DeleteByConditionID(ctx, conditionID); err != nil {
 			return err
@@ -171,5 +238,5 @@ func (s *policyService) SetConditionActions(ctx context.Context, conditionID str
 		}
 
 		return nil
-	})
+	}) */
 }

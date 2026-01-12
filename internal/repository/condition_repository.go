@@ -13,15 +13,17 @@ type ConditionRepository interface {
 }
 
 type conditionRepository struct {
-	db *gorm.DB
+	BaseRepository
 }
 
 func NewConditionRepository(db *gorm.DB) ConditionRepository {
-	return &conditionRepository{db: db}
+	return &conditionRepository{
+		BaseRepository: NewBaseRepository(db),
+	}
 }
 
 func (r *conditionRepository) List(ctx context.Context, filter model.DefCondition) ([]*model.DefCondition, error) {
-	q := query.Use(r.db).DefCondition
+	q := query.Use(r.Executor(ctx)).DefCondition
 	db := q.WithContext(ctx)
 
 	// Dynamic Filtering

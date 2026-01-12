@@ -13,15 +13,17 @@ type UnitRepository interface {
 }
 
 type unitRepository struct {
-	db *gorm.DB
+	BaseRepository
 }
 
 func NewUnitRepository(db *gorm.DB) UnitRepository {
-	return &unitRepository{db: db}
+	return &unitRepository{
+		BaseRepository: NewBaseRepository(db),
+	}
 }
 
 func (r *unitRepository) List(ctx context.Context, filter model.DefUnit) ([]*model.DefUnit, error) {
-	q := query.Use(r.db).DefUnit
+	q := query.Use(r.Executor(ctx)).DefUnit
 	db := q.WithContext(ctx)
 
 	return db.Find()
