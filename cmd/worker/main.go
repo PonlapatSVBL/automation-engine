@@ -53,13 +53,19 @@ func main() {
 	txManager := repository.NewTransactionManager(db)
 	automationRepo := repository.NewAutomationRepository(db)
 	automationActionRepo := repository.NewAutomationActionRepository(db)
+	automationConditionGroupRepo := repository.NewAutomationConditionGroupRepository(db)
 	automationConditionRepo := repository.NewAutomationConditionRepository(db)
+	automationTargetRepo := repository.NewAutomationTargetRepository(db)
+	automationExecutionRepo := repository.NewAutomationExecutionRepository(db)
 
 	runService := service.NewRunService(
 		txManager,
 		automationRepo,
 		automationActionRepo,
+		automationConditionGroupRepo,
 		automationConditionRepo,
+		automationTargetRepo,
+		automationExecutionRepo,
 	)
 
 	// Create context with cancel

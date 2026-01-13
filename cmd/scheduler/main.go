@@ -1,16 +1,19 @@
 package main
 
 import (
+	"automation-engine/internal/azbus"
 	"automation-engine/internal/domain/model"
 	"automation-engine/internal/repository"
 	"automation-engine/internal/service"
 	"automation-engine/internal/utils"
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"github.com/joho/godotenv"
+	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
 	"github.com/robfig/cron/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -18,9 +21,27 @@ import (
 	myConfig "github.com/go-sql-driver/mysql"
 )
 
+type MessageRequest struct {
+	AutomationID string `json:"action_id"`
+}
+
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system env")
+	utils.LoadEnvVariables()
+
+	ctx := context.Background()
+
+	connStr := utils.GetEnv("SERVICE_BUS_CONNECTION_STRING", "")
+
+	// New azure service bus client
+	client, err := azservicebus.NewClientFromConnectionString(connStr, nil)
+	if err != nil {
+		log.Fatalf("Failed to create Service Bus client: %v", err)
+	}
+	defer client.Close(ctx)
+
+	sender, err := azbus.NewSender(ctx, client, "automate_queue")
+	if err != nil {
+		log.Fatalf("")
 	}
 
 	dbHost := os.Getenv("MYSQL_HOST")
@@ -28,7 +49,7 @@ func main() {
 	dbPass := os.Getenv("MYSQL_PASSWORD")
 	dbName := os.Getenv("MYSQL_DB")
 
-	// 1. เชื่อมต่อ Database (GORM)
+	// เชื่อมต่อ Database (GORM)
 	cfg := myConfig.Config{
 		User:   dbUser,
 		Passwd: dbPass,
@@ -53,20 +74,26 @@ func main() {
 	txManager := repository.NewTransactionManager(db)
 	automationRepo := repository.NewAutomationRepository(db)
 	automationActionRepo := repository.NewAutomationActionRepository(db)
+	automationConditionGroupRepo := repository.NewAutomationConditionGroupRepository(db)
 	automationConditionRepo := repository.NewAutomationConditionRepository(db)
+	automationTargetRepo := repository.NewAutomationTargetRepository(db)
+	automationExecutionRepo := repository.NewAutomationExecutionRepository(db)
 
 	runService := service.NewRunService(
 		txManager,
 		automationRepo,
 		automationActionRepo,
+		automationConditionGroupRepo,
 		automationConditionRepo,
+		automationTargetRepo,
+		automationExecutionRepo,
 	)
 
 	c := cron.New()
 
 	// ตั้ง Cron ทำงานทุก 1 นาที
 	c.AddFunc("* * * * *", func() {
-		go runWorker("Worker-at-"+time.Now().Format("15:04:05"), runService)
+		go runWorker(ctx, time.Now(), runService, sender)
 	})
 
 	c.Start()
@@ -75,13 +102,14 @@ func main() {
 	select {}
 }
 
-func runWorker(workerName string, runService service.RunService) {
-	ctx := context.Background()
+func runWorker(ctx context.Context, runTime time.Time, runService service.RunService, sender *azbus.Sender) {
+	workerName := "Worker-at-" + runTime.Format("15:04:05")
+
 	log.Printf("[%s] Worker cycle started", workerName)
 
 	for {
 		// 1. ดึงงานและจองสถานะเป็น PROCESSING (ผ่าน Skip Locked)
-		tasks, err := runService.FetchAndLockTasks(ctx, 20)
+		tasks, err := runService.FetchAndLockTasks(ctx, runTime, 20)
 		if err != nil {
 			log.Printf("[%s] Error fetching tasks: %v", workerName, err)
 			// ถ้า Error ให้หยุดพักสักครู่แล้วค่อยวนลูปใหม่
@@ -143,6 +171,16 @@ func runWorker(workerName string, runService service.RunService) {
 			task.LastUpd = time.Now()
 
 			updatedTasks = append(updatedTasks, task)
+
+			message := MessageRequest{
+				AutomationID: task.AutomationID,
+			}
+			body, err := json.Marshal(message)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			sender.SendMessage(ctx, task.InstanceServerChannelID, body)
 		}
 
 		// 4. อัปเดตครั้งเดียว (1 Database Round-trip)

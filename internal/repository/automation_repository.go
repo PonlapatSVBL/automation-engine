@@ -13,7 +13,7 @@ import (
 type AutomationRepository interface {
 	GetByID(ctx context.Context, id string) (*model.RunAutomation, error)
 	Update(ctx context.Context, action *model.RunAutomation) error
-	FetchAndLock(ctx context.Context, limit int) ([]*model.RunAutomation, error)
+	FetchAndLock(ctx context.Context, runTime time.Time, limit int) ([]*model.RunAutomation, error)
 	UpdateStatusBatch(ctx context.Context, ids []string, status string) error
 	BulkUpdateNextRun(ctx context.Context, tasks []*model.RunAutomation) error
 }
@@ -39,17 +39,13 @@ func (r *automationRepository) Update(ctx context.Context, action *model.RunAuto
 	return err
 }
 
-func (r *automationRepository) FetchAndLock(ctx context.Context, limit int) ([]*model.RunAutomation, error) {
+func (r *automationRepository) FetchAndLock(ctx context.Context, runTime time.Time, limit int) ([]*model.RunAutomation, error) {
 	var results []*model.RunAutomation
 	q := query.Use(r.Executor(ctx)).RunAutomation
 
-	now := time.Now()
-	startTime := now.Add(-10 * time.Minute)
-
 	err := r.Executor(ctx).WithContext(ctx).
 		Model(&model.RunAutomation{}).
-		Where(q.NextRunTime.Lte(now)).
-		Where(q.NextRunTime.Gt(startTime)).
+		Where(q.NextRunTime.Lte(runTime)).
 		Where(q.Status.Eq("PENDING")).
 		Limit(limit).
 		Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).

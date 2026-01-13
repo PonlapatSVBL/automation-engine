@@ -70,7 +70,9 @@ func main() {
 	conditionActionRepo := repository.NewConditionActionRepository(db)
 	automationRepo := repository.NewAutomationRepository(db)
 	automationActionRepo := repository.NewAutomationActionRepository(db)
+	automationConditionGroupRepo := repository.NewAutomationConditionGroupRepository(db)
 	automationConditionRepo := repository.NewAutomationConditionRepository(db)
+	automationTargetRepo := repository.NewAutomationTargetRepository(db)
 	automationExecutionRepo := repository.NewAutomationExecutionRepository(db)
 
 	// 2. ประกอบร่างจิ๊กซอว์ (Dependency Injection)
@@ -96,7 +98,10 @@ func main() {
 		txManager,
 		automationRepo,
 		automationActionRepo,
+		automationConditionGroupRepo,
 		automationConditionRepo,
+		automationTargetRepo,
+		automationExecutionRepo,
 	)
 	logService := service.NewLogService(
 		txManager,

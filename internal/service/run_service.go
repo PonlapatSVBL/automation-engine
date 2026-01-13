@@ -4,34 +4,44 @@ import (
 	"automation-engine/internal/domain/model"
 	"automation-engine/internal/repository"
 	"context"
+	"time"
 )
 
 type RunService interface {
 	GetAutomationByID(ctx context.Context, automationID string) (*model.RunAutomation, error)
 	UpdateAutomationByID(ctx context.Context, automation *model.RunAutomation) error
-	FetchAndLockTasks(ctx context.Context, limit int) ([]*model.RunAutomation, error)
+	FetchAndLockTasks(ctx context.Context, runTime time.Time, limit int) ([]*model.RunAutomation, error)
 	MarkTasksCompleted(ctx context.Context, taskIDs []string) error
 	BulkUpdateNextRun(ctx context.Context, tasks []*model.RunAutomation) error
 }
 
 type runService struct {
-	txManager               repository.TransactionManager
-	automationRepo          repository.AutomationRepository
-	automationActionRepo    repository.AutomationActionRepository
-	automationConditionRepo repository.AutomationConditionRepository
+	txManager                    repository.TransactionManager
+	automationRepo               repository.AutomationRepository
+	automationActionRepo         repository.AutomationActionRepository
+	automationConditionGroupRepo repository.AutomationConditionGroupRepository
+	automationConditionRepo      repository.AutomationConditionRepository
+	automationTargetRepo         repository.AutomationTargetRepository
+	automationExecutionRepo      repository.AutomationExecutionRepository
 }
 
 func NewRunService(
 	txManager repository.TransactionManager,
 	automationRepo repository.AutomationRepository,
 	automationActionRepo repository.AutomationActionRepository,
+	automationConditionGroupRepo repository.AutomationConditionGroupRepository,
 	automationConditionRepo repository.AutomationConditionRepository,
+	automationTargetRepo repository.AutomationTargetRepository,
+	automationExecutionRepo repository.AutomationExecutionRepository,
 ) RunService {
 	return &runService{
-		txManager:               txManager,
-		automationRepo:          automationRepo,
-		automationActionRepo:    automationActionRepo,
-		automationConditionRepo: automationConditionRepo,
+		txManager:                    txManager,
+		automationRepo:               automationRepo,
+		automationActionRepo:         automationActionRepo,
+		automationConditionGroupRepo: automationConditionGroupRepo,
+		automationConditionRepo:      automationConditionRepo,
+		automationTargetRepo:         automationTargetRepo,
+		automationExecutionRepo:      automationExecutionRepo,
 	}
 }
 
@@ -53,12 +63,12 @@ func (s *runService) UpdateAutomationByID(ctx context.Context, automation *model
 	return nil
 }
 
-func (s *runService) FetchAndLockTasks(ctx context.Context, limit int) ([]*model.RunAutomation, error) {
+func (s *runService) FetchAndLockTasks(ctx context.Context, runTime time.Time, limit int) ([]*model.RunAutomation, error) {
 	var tasks []*model.RunAutomation
 
 	err := s.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
 		// 1. ดึงงานและ Lock แถวไว้
-		lockedTasks, err := s.automationRepo.FetchAndLock(txCtx, limit)
+		lockedTasks, err := s.automationRepo.FetchAndLock(txCtx, runTime, limit)
 		if err != nil {
 			return err
 		}
@@ -127,5 +137,7 @@ func (s *runService) BulkUpdateNextRun(ctx context.Context, tasks []*model.RunAu
 		return nil
 	}
 
-	return s.automationRepo.BulkUpdateNextRun(ctx, tasks)
+	return s.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		return s.automationRepo.BulkUpdateNextRun(txCtx, tasks)
+	})
 }

@@ -27,9 +27,10 @@ func NewSender(ctx context.Context, client *azservicebus.Client, queueName strin
 }
 
 // SendMessage sends a normal message (no scheduling)
-func (s *Sender) SendMessage(ctx context.Context, body []byte) error {
+func (s *Sender) SendMessage(ctx context.Context, sessionID string, body []byte) error {
 	msg := &azservicebus.Message{
-		Body: body,
+		SessionID: &sessionID,
+		Body:      body,
 	}
 
 	return s.sender.SendMessage(ctx, msg, nil)
