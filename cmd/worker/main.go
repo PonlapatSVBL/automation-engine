@@ -51,6 +51,10 @@ func main() {
 	}
 
 	txManager := repository.NewTransactionManager(db)
+	conditionRepo := repository.NewConditionRepository(db)
+	operatorRepo := repository.NewOperatorRepository(db)
+	unitRepo := repository.NewUnitRepository(db)
+	actionRepo := repository.NewActionRepository(db)
 	automationRepo := repository.NewAutomationRepository(db)
 	automationActionRepo := repository.NewAutomationActionRepository(db)
 	automationConditionGroupRepo := repository.NewAutomationConditionGroupRepository(db)
@@ -58,6 +62,13 @@ func main() {
 	automationTargetRepo := repository.NewAutomationTargetRepository(db)
 	automationExecutionRepo := repository.NewAutomationExecutionRepository(db)
 
+	definitionService := service.NewDefinitionService(
+		txManager,
+		actionRepo,
+		conditionRepo,
+		operatorRepo,
+		unitRepo,
+	)
 	runService := service.NewRunService(
 		txManager,
 		automationRepo,
@@ -65,6 +76,10 @@ func main() {
 		automationConditionGroupRepo,
 		automationConditionRepo,
 		automationTargetRepo,
+		automationExecutionRepo,
+	)
+	logService := service.NewLogService(
+		txManager,
 		automationExecutionRepo,
 	)
 
@@ -92,7 +107,7 @@ func main() {
 		BatchSize:   utils.GetEnvAsInt("BATCH_SIZE", 5),
 		ProcessPool: utils.GetEnvAsInt("PROCESS_POOL", 1),
 	}
-	receiver1 := azbus.NewSessionReceiver(ctx, &wg, client, "automate_queue", runService, &receiver1Opts)
+	receiver1 := azbus.NewSessionReceiver(ctx, &wg, client, "automate_queue", runService, definitionService, logService, &receiver1Opts)
 
 	// Run session receiver
 	go receiver1.RunDispatcher()

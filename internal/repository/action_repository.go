@@ -14,6 +14,7 @@ type ActionRepository interface {
 	Update(ctx context.Context, action *model.DefAction) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter model.DefAction) ([]*model.DefAction, error)
+	ListByActionIDs(ctx context.Context, actionIDs []string) ([]*model.DefAction, error)
 }
 
 type actionRepository struct {
@@ -64,6 +65,15 @@ func (r *actionRepository) List(ctx context.Context, filter model.DefAction) ([]
 	if filter.Status != "" {
 		db = db.Where(q.Status.Eq(filter.Status))
 	}
+
+	return db.Find()
+}
+
+func (r *actionRepository) ListByActionIDs(ctx context.Context, actionIDs []string) ([]*model.DefAction, error) {
+	q := query.Use(r.Executor(ctx)).DefAction
+	db := q.WithContext(ctx)
+
+	db = db.Where(q.ActionID.In(actionIDs...))
 
 	return db.Find()
 }

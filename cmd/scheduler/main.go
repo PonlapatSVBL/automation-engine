@@ -3,6 +3,7 @@ package main
 import (
 	"automation-engine/internal/azbus"
 	"automation-engine/internal/domain/model"
+	"automation-engine/internal/dto"
 	"automation-engine/internal/repository"
 	"automation-engine/internal/service"
 	"automation-engine/internal/utils"
@@ -20,10 +21,6 @@ import (
 
 	myConfig "github.com/go-sql-driver/mysql"
 )
-
-type MessageRequest struct {
-	AutomationID string `json:"action_id"`
-}
 
 func main() {
 	utils.LoadEnvVariables()
@@ -172,7 +169,7 @@ func runWorker(ctx context.Context, runTime time.Time, runService service.RunSer
 
 			updatedTasks = append(updatedTasks, task)
 
-			message := MessageRequest{
+			message := dto.MessageServiceBus{
 				AutomationID: task.AutomationID,
 			}
 			body, err := json.Marshal(message)

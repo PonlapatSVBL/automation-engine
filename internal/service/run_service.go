@@ -2,6 +2,7 @@ package service
 
 import (
 	"automation-engine/internal/domain/model"
+	"automation-engine/internal/dto"
 	"automation-engine/internal/repository"
 	"context"
 	"time"
@@ -9,6 +10,7 @@ import (
 
 type RunService interface {
 	GetAutomationByID(ctx context.Context, automationID string) (*model.RunAutomation, error)
+	GetAutomationSnapshot(ctx context.Context, automationID string) (*dto.AutomationSnapshot, error)
 	UpdateAutomationByID(ctx context.Context, automation *model.RunAutomation) error
 	FetchAndLockTasks(ctx context.Context, runTime time.Time, limit int) ([]*model.RunAutomation, error)
 	MarkTasksCompleted(ctx context.Context, taskIDs []string) error
@@ -52,6 +54,48 @@ func (s *runService) GetAutomationByID(ctx context.Context, automationID string)
 	}
 
 	return row, nil
+}
+
+func (s *runService) GetAutomationSnapshot(ctx context.Context, automationID string) (*dto.AutomationSnapshot, error) {
+	snapshot := &dto.AutomationSnapshot{}
+
+	automation, err := s.automationRepo.GetByID(ctx, automationID)
+	if err != nil {
+		return nil, err
+	}
+
+	conditionGroups, err := s.automationConditionGroupRepo.ListByAutomationID(ctx, automationID)
+	if err != nil {
+		return nil, err
+	}
+
+	var groupIDs []string
+	for _, group := range conditionGroups {
+		groupIDs = append(groupIDs, group.AutomationConditionGroupID)
+	}
+
+	conditions, err := s.automationConditionRepo.ListByGroupIDs(ctx, groupIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	actions, err := s.automationActionRepo.ListByAutomationID(ctx, automationID)
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := s.automationTargetRepo.ListByAutomationID(ctx, automationID)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshot.Automation = automation
+	snapshot.ConditionGroups = conditionGroups
+	snapshot.Conditions = conditions
+	snapshot.Actions = actions
+	snapshot.Targets = targets
+
+	return snapshot, nil
 }
 
 func (s *runService) UpdateAutomationByID(ctx context.Context, automation *model.RunAutomation) error {

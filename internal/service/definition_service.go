@@ -22,8 +22,7 @@ type DefinitionService interface {
 	// Action CRUD
 	CreateAction(ctx context.Context, action *model.DefAction) error
 	GetActionByID(ctx context.Context, id string) (*model.DefAction, error)
-	// UpdateAction(ctx context.Context, action *model.DefAction) error
-	// DeleteAction(ctx context.Context, id string) error
+	ListActionByIDs(ctx context.Context, actionIDs []string) ([]*model.DefAction, error)
 }
 
 type definitionService struct {
@@ -54,6 +53,10 @@ func (s *definitionService) CreateAction(ctx context.Context, action *model.DefA
 	return s.actionRepo.Create(ctx, action)
 }
 
-func (s *definitionService) GetActionByID(ctx context.Context, id string) (*model.DefAction, error) {
-	return s.actionRepo.GetByID(ctx, id)
+func (s *definitionService) GetActionByID(ctx context.Context, actionID string) (*model.DefAction, error) {
+	return s.actionRepo.GetByID(ctx, actionID)
+}
+
+func (s *definitionService) ListActionByIDs(ctx context.Context, actionIDs []string) ([]*model.DefAction, error) {
+	return s.actionRepo.ListByActionIDs(ctx, actionIDs)
 }

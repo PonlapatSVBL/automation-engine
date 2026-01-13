@@ -2,9 +2,9 @@ package azbus
 
 import (
 	"automation-engine/internal/domain/model"
+	"automation-engine/internal/dto"
 	"automation-engine/internal/httpclient"
 	"automation-engine/internal/service"
-	"automation-engine/internal/utils"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,11 +16,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
 )
 
-type Message struct {
-	AutomationID string `json:"automation_id"`
-	Url          string `json:"url"`
-}
-
 type SessionReceiverOptions struct {
 	SessionPool int
 	BatchSize   int
@@ -31,16 +26,17 @@ type SessionReceiverOptions struct {
 type Option func(*SessionReceiverOptions)
 
 type SessionReceiver struct {
-	ctx        context.Context
-	wg         *sync.WaitGroup
-	client     *azservicebus.Client
-	queueName  string
-	sender     *Sender
-	runService service.RunService
-	options    SessionReceiverOptions
+	ctx               context.Context
+	wg                *sync.WaitGroup
+	client            *azservicebus.Client
+	queueName         string
+	runService        service.RunService
+	definitionService service.DefinitionService
+	logService        service.LogService
+	options           SessionReceiverOptions
 }
 
-func NewSessionReceiver(ctx context.Context, wg *sync.WaitGroup, client *azservicebus.Client, queueName string, runService service.RunService, opts *SessionReceiverOptions) *SessionReceiver {
+func NewSessionReceiver(ctx context.Context, wg *sync.WaitGroup, client *azservicebus.Client, queueName string, runService service.RunService, definitionService service.DefinitionService, logService service.LogService, opts *SessionReceiverOptions) *SessionReceiver {
 	// 1. กำหนดค่า Default
 	defaultOpts := SessionReceiverOptions{
 		SessionPool: 20,
@@ -65,20 +61,16 @@ func NewSessionReceiver(ctx context.Context, wg *sync.WaitGroup, client *azservi
 		}
 	}
 
-	sender, err := NewSender(ctx, client, queueName)
-	if err != nil {
-		log.Fatalf("Failed to create sender: %v", err)
-	}
-
 	// 3. สร้าง Struct โดยใช้ opts ที่ได้มา
 	return &SessionReceiver{
-		ctx:        ctx,
-		wg:         wg,
-		client:     client,
-		queueName:  queueName,
-		sender:     sender,
-		runService: runService,
-		options:    defaultOpts,
+		ctx:               ctx,
+		wg:                wg,
+		client:            client,
+		queueName:         queueName,
+		runService:        runService,
+		definitionService: definitionService,
+		logService:        logService,
+		options:           defaultOpts,
 	}
 }
 
@@ -191,89 +183,55 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 		return fmt.Errorf("received nil message")
 	}
 
-	var body Message
+	var body dto.MessageServiceBus
 	if err := json.Unmarshal(msg.Body, &body); err != nil {
 		return fmt.Errorf("invalid message json: %w", err)
 	}
-
-	// Check for required fields in the message body
-	if body.Url == "" {
-		return fmt.Errorf("url is empty in message")
+	if err := body.Validate(); err != nil {
+		return err
 	}
 
-	// Fetch automation details using RunService
-	automation, err := sr.runService.GetAutomationByID(sr.ctx, body.AutomationID)
+	// Fetch automation snapshot
+	snapshot, err := sr.runService.GetAutomationSnapshot(sr.ctx, body.AutomationID)
 	if err != nil {
-		return fmt.Errorf("failed to get automation by ID: %w", err)
+		return fmt.Errorf("failed to get automation snapshot by ID: %w", err)
 	}
 
-	if automation.IsActive != "Y" {
-		// return fmt.Errorf("automation is not active")
-		return nil
-	}
-	if automation.NextRunTime.After(time.Now()) {
-		// return fmt.Errorf("automation is not due to run yet")
-		return nil
+	actionIDs := make([]string, 0)
+	for _, action := range snapshot.Actions {
+		actionIDs = append(actionIDs, action.ActionID)
 	}
 
-	var next time.Time
-	switch automation.Frequency {
-	case "daily":
-		next, err = utils.CalculateDailyNextRun(
-			time.Now(),
-			automation.StartDate,
-			time.Local,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to calculate next daily run: %w", err)
-		}
-		log.Printf("Next daily run calculated: %s", next)
-	case "weekly":
-		next, err = utils.CalculateWeeklyNextRun(
-			time.Now(),
-			automation.StartDate,
-			automation.DayOfWeek,
-			time.Local,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to calculate next weekly run: %w", err)
-		}
-		log.Printf("Next weekly run calculated: %s", next)
-	case "monthly":
-		next, err = utils.CalculateMonthlyNextRun(
-			time.Now(),
-			automation.StartDate,
-			int(automation.DayOfMonth),
-			time.Local,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to calculate next monthly run: %w", err)
-		}
-		log.Printf("Next monthly run calculated: %s", next)
-	default:
-		return fmt.Errorf("unknown interval type: %s", automation.Frequency)
-	}
-
-	statusCode, _, err := httpclient.PostRequest(body.Url, msg.Body)
-
-	// Handle non-200 status code or network/client errors
-	if err != nil || statusCode != 200 {
-		// return fmt.Errorf("post request failed")
-	}
-
-	err = sr.sender.ScheduleMessage(sr.ctx, "1", msg.Body, next)
+	actions, err := sr.definitionService.ListActionByIDs(sr.ctx, actionIDs)
 	if err != nil {
-		return fmt.Errorf("failed to schedule next message: %w", err)
+		return err
 	}
 
-	err = sr.runService.UpdateAutomationByID(sr.ctx, &model.RunAutomation{
-		AutomationID: body.AutomationID,
-		NextRunTime:  next,
-	})
+	snapshotBody, err := json.Marshal(snapshot)
 	if err != nil {
-		return fmt.Errorf("failed to update automation next run: %w", err)
+		return err
+	}
+
+	log := model.LogAutomationExecution{
+		LogID:          body.LogID,
+		AutomationID:   body.AutomationID,
+		Status:         "RUNNING",
+		TriggeredAt:    body.TriggeredAt,
+		ConfigSnapshot: string(snapshotBody),
+	}
+
+	for _, action := range actions {
+		statusCode, _, err := httpclient.PostRequest(action.InvokeURL, snapshotBody)
+		if err != nil || statusCode != 200 {
+			log.Status = "FAILED"
+			log.ErrorMessage = "post request failed"
+			sr.logService.Upsert(sr.ctx, &log)
+			return fmt.Errorf("post request failed")
+		}
 	}
 
 	// Successfully processed the message
+	log.Status = "SUCCESS"
+	sr.logService.Upsert(sr.ctx, &log)
 	return nil
 }

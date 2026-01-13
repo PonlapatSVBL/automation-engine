@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type AutomationExecutionRepository interface {
 	Create(ctx context.Context, log *model.LogAutomationExecution) error
+	Upsert(ctx context.Context, log *model.LogAutomationExecution) error
 }
 
 type automationExecutionRepository struct {
@@ -33,4 +35,11 @@ func (r *automationExecutionRepository) Create(ctx context.Context, log *model.L
 	q := query.Use(r.Executor(ctx)).LogAutomationExecution
 
 	return q.WithContext(ctx).Create(log)
+}
+
+func (r *automationExecutionRepository) Upsert(ctx context.Context, log *model.LogAutomationExecution) error {
+	return r.Executor(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "log_id"}},
+		UpdateAll: true,
+	}).Create(log).Error
 }
