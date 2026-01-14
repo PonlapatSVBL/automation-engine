@@ -43,9 +43,12 @@ func (r *automationRepository) FetchAndLock(ctx context.Context, runTime time.Ti
 	var results []*model.RunAutomation
 	q := query.Use(r.Executor(ctx)).RunAutomation
 
+	// ยอมให้ย้อนหลังได้แค่ 59 วินาที (เพื่อไม่ให้ข้ามนาทีปัจจุบันไป)
+	lookbackTime := runTime.Add(-59 * time.Second)
+
 	err := r.Executor(ctx).WithContext(ctx).
 		Model(&model.RunAutomation{}).
-		Where(q.NextRunTime.Lte(runTime)).
+		Where(q.NextRunTime.Between(lookbackTime, runTime)).
 		Where(q.Status.Eq("PENDING")).
 		Limit(limit).
 		Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).

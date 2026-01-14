@@ -11,6 +11,7 @@ import (
 )
 
 type AutomationExecutionRepository interface {
+	GenerateLogID() string
 	Create(ctx context.Context, log *model.LogAutomationExecution) error
 	Upsert(ctx context.Context, log *model.LogAutomationExecution) error
 }
@@ -23,6 +24,10 @@ func NewAutomationExecutionRepository(db *gorm.DB) AutomationExecutionRepository
 	return &automationExecutionRepository{
 		BaseRepository: NewBaseRepository(db),
 	}
+}
+
+func (r *automationExecutionRepository) GenerateLogID() string {
+	return r.GenerateSortableID(20)
 }
 
 func (r *automationExecutionRepository) Create(ctx context.Context, log *model.LogAutomationExecution) error {

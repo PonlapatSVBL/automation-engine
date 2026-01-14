@@ -85,12 +85,16 @@ func main() {
 		automationTargetRepo,
 		automationExecutionRepo,
 	)
+	logService := service.NewLogService(
+		txManager,
+		automationExecutionRepo,
+	)
 
 	c := cron.New()
 
 	// ตั้ง Cron ทำงานทุก 1 นาที
 	c.AddFunc("* * * * *", func() {
-		go runWorker(ctx, time.Now(), runService, sender)
+		go runWorker(ctx, time.Now(), runService, logService, sender)
 	})
 
 	c.Start()
@@ -99,90 +103,94 @@ func main() {
 	select {}
 }
 
-func runWorker(ctx context.Context, runTime time.Time, runService service.RunService, sender *azbus.Sender) {
-	workerName := "Worker-at-" + runTime.Format("15:04:05")
+func runWorker(ctx context.Context, runTime time.Time, runService service.RunService, logService service.LogService, sender *azbus.Sender) {
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Hour)
+	defer cancel()
 
-	log.Printf("[%s] Worker cycle started", workerName)
+	workerID := runTime.Format("15:04:05")
 
 	for {
-		// 1. ดึงงานและจองสถานะเป็น PROCESSING (ผ่าน Skip Locked)
-		tasks, err := runService.FetchAndLockTasks(ctx, runTime, 20)
-		if err != nil {
-			log.Printf("[%s] Error fetching tasks: %v", workerName, err)
-			// ถ้า Error ให้หยุดพักสักครู่แล้วค่อยวนลูปใหม่
-			time.Sleep(5 * time.Second)
-			continue
+		if err := ctx.Err(); err != nil {
+			log.Printf("[Worker-%s] ⏱ Timeout/Cancelled: %v", workerID, err)
+			return
 		}
 
-		// 2. ถ้า Query แล้วได้ 0 row ให้หยุด Loop
+		// 1. Fetch & Lock
+		tasks, err := runService.FetchAndLockTasks(ctx, runTime, 100)
+		if err != nil {
+			log.Printf("[Worker-%s] ❌ Error fetching tasks: %v", workerID, err)
+			time.Sleep(5 * time.Second)
+			return
+		}
+
 		if len(tasks) == 0 {
-			log.Printf("[%s] No more tasks found. Worker cycle finished.", workerName)
+			log.Printf("[Worker-%s] ✅ No more tasks.", workerID)
 			break
 		}
 
-		log.Printf("[%s] Picked up %d tasks", workerName, len(tasks))
+		log.Printf("[Worker-%s] 📥 Picked up %d tasks", workerID, len(tasks))
 
-		// 3. เริ่มประมวลผลงาน
-		updatedTasks := make([]*model.RunAutomation, 0, len(tasks))
+		var successTasks []*model.RunAutomation
+
 		for _, task := range tasks {
-			log.Printf("[%s] Executing Automation ID: %s", workerName, task.AutomationID)
-
-			var nextRunTime time.Time
-
-			switch task.Frequency {
-			case "daily":
-				nextRunTime, err = utils.CalculateDailyNextRun(
-					time.Now(),
-					task.StartDate,
-					time.Local,
-				)
-				if err != nil {
-					continue
-				}
-			case "weekly":
-				nextRunTime, err = utils.CalculateWeeklyNextRun(
-					time.Now(),
-					task.StartDate,
-					task.DayOfWeek,
-					time.Local,
-				)
-				if err != nil {
-					continue
-				}
-			case "monthly":
-				nextRunTime, err = utils.CalculateMonthlyNextRun(
-					time.Now(),
-					task.StartDate,
-					int(task.DayOfMonth),
-					time.Local,
-				)
-				if err != nil {
-					continue
-				}
-			default:
-				continue
-			}
-
-			task.Status = "PENDING"
-			task.NextRunTime = nextRunTime
-			task.LastUpd = time.Now()
-
-			updatedTasks = append(updatedTasks, task)
-
-			message := dto.MessageServiceBus{
-				AutomationID: task.AutomationID,
-			}
-			body, err := json.Marshal(message)
+			// 2. คำนวณเวลาถัดไป
+			nextRun, err := calculateNextRun(task)
 			if err != nil {
-				fmt.Println(err)
+				log.Printf("[Worker-%s] ⚠️ Skip Automation [%s]: %v", workerID, task.AutomationID, err)
 				continue
 			}
-			sender.SendMessage(ctx, task.InstanceServerChannelID, body)
+
+			// 3. เตรียม Message (DTO)
+			msgPayload := dto.MessageServiceBus{
+				LogID:        logService.GenerateLogID(),
+				AutomationID: task.AutomationID,
+				TriggeredAt:  time.Now(),
+			}
+
+			body, _ := json.Marshal(msgPayload)
+
+			// 4. ส่งเข้า Service Bus (ถ้าพังจะไม่ update DB เพื่อให้รอบหน้ามาทำใหม่)
+			err = sender.SendMessage(ctx, task.InstanceServerChannelID, body)
+			if err != nil {
+				log.Printf("[Worker-%s] ‼️ Failed to dispatch [%s] to bus: %v", workerID, task.AutomationID, err)
+				continue
+			}
+
+			// เตรียมข้อมูลเพื่อ Update DB
+			task.Status = "PENDING"
+			task.NextRunTime = nextRun
+			task.LastUpd = time.Now()
+			successTasks = append(successTasks, task)
+
+			log.Printf("[Worker-%s] 📤 Dispatched: AutomationID=%s | LogID=%s", workerID, task.AutomationID, msgPayload.LogID)
 		}
 
-		// 4. อัปเดตครั้งเดียว (1 Database Round-trip)
-		if err := runService.BulkUpdateNextRun(ctx, updatedTasks); err != nil {
-			log.Printf("[%s] Bulk Update Error: %v", workerName, err)
+		// 5. Bulk Update เฉพาะรายการที่ส่ง Bus สำเร็จ
+		if len(successTasks) > 0 {
+			if err := runService.BulkUpdateNextRun(ctx, successTasks); err != nil {
+				log.Printf("[Worker-%s] ❌ Bulk Update Error: %v", workerID, err)
+			} else {
+				log.Printf("[Worker-%s] 💾 Successfully updated %d tasks in database", workerID, len(successTasks))
+			}
 		}
+	}
+}
+
+func calculateNextRun(task *model.RunAutomation) (time.Time, error) {
+	now := time.Now()
+
+	switch task.Frequency {
+	case "once":
+		return time.Time{}, nil
+	case "daily":
+		return utils.CalculateDailyNextRun(now, task.StartDate, time.Local)
+	case "weekly":
+		return utils.CalculateWeeklyNextRun(now, task.StartDate, task.DayOfWeek, time.Local)
+	case "monthly":
+		return utils.CalculateMonthlyNextRun(now, task.StartDate, int(task.DayOfMonth), time.Local)
+	case "yearly":
+		return utils.CalculateYearlyNextRun(now, task.StartDate, int(task.DayOfMonth), int(task.MonthOfYear), time.Local)
+	default:
+		return time.Time{}, fmt.Errorf("unsupported frequency: %s", task.Frequency)
 	}
 }

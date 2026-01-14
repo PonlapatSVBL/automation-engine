@@ -7,6 +7,7 @@ import (
 )
 
 type LogService interface {
+	GenerateLogID() string
 	Upsert(ctx context.Context, log *model.LogAutomationExecution) error
 }
 
@@ -23,6 +24,10 @@ func NewLogService(
 		txManager:               txManager,
 		automationExecutionRepo: automationExecutionRepo,
 	}
+}
+
+func (s *logService) GenerateLogID() string {
+	return s.automationExecutionRepo.GenerateLogID()
 }
 
 func (s *logService) Upsert(ctx context.Context, log *model.LogAutomationExecution) error {

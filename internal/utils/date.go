@@ -127,3 +127,42 @@ func CalculateMonthlyNextRun(
 
 	return time.Time{}, fmt.Errorf("unable to calculate next monthly run")
 }
+
+// internal/utils/date.go
+
+func CalculateYearlyNextRun(
+	now time.Time,
+	runTime time.Time,
+	dayOfMonth int,
+	monthOfYear int,
+	loc *time.Location,
+) (time.Time, error) {
+	// ตรวจสอบความถูกต้องของเดือนและวันเบื้องต้น
+	if monthOfYear < 1 || monthOfYear > 12 {
+		return time.Time{}, fmt.Errorf("invalid month_of_year: %d", monthOfYear)
+	}
+
+	h, m, s := runTime.Hour(), runTime.Minute(), runTime.Second()
+	now = now.In(loc)
+
+	year := now.Year()
+
+	// พยายามสร้าง candidate ในปีปัจจุบันก่อน
+	// ใช้ monthOfYear และ dayOfMonth ที่ได้รับมาจากพารามิเตอร์
+	candidate := time.Date(
+		year,
+		time.Month(monthOfYear),
+		dayOfMonth,
+		h, m, s,
+		0,
+		loc,
+	)
+
+	// ถ้า candidate ที่สร้างขึ้น "ไม่มากกว่า" เวลาปัจจุบัน (คือผ่านมาแล้วในรอบปีนี้)
+	// ให้ขยับไปปีหน้า
+	if !candidate.After(now) {
+		candidate = candidate.AddDate(1, 0, 0)
+	}
+
+	return candidate, nil
+}
