@@ -12,14 +12,13 @@ const TableNameLogAutomationExecution = "log_automation_executions"
 
 // LogAutomationExecution mapped from table <log_automation_executions>
 type LogAutomationExecution struct {
-	LogID            string    `gorm:"column:log_id;primaryKey" json:"log_id"`
-	AutomationID     string    `gorm:"column:automation_id" json:"automation_id"`
-	Status           string    `gorm:"column:status;not null;default:QUEUED" json:"status"`
-	TriggeredAt      time.Time `gorm:"column:triggered_at;not null;default:CURRENT_TIMESTAMP" json:"triggered_at"`
-	FinishedAt       time.Time `gorm:"column:finished_at;not null" json:"finished_at"`
-	ConfigSnapshot   string    `gorm:"column:config_snapshot" json:"config_snapshot"`
-	ExecutionDetails string    `gorm:"column:execution_details" json:"execution_details"`
-	ErrorMessage     string    `gorm:"column:error_message" json:"error_message"`
+	LogID          string    `gorm:"column:log_id;primaryKey" json:"log_id"`
+	AutomationID   string    `gorm:"column:automation_id" json:"automation_id"`
+	Status         string    `gorm:"column:status;not null;default:FAILED" json:"status"`
+	TriggeredAt    time.Time `gorm:"column:triggered_at;not null;default:CURRENT_TIMESTAMP" json:"triggered_at"`
+	FinishedAt     time.Time `gorm:"column:finished_at;not null" json:"finished_at"`
+	ConfigSnapshot string    `gorm:"column:config_snapshot" json:"config_snapshot"`
+	ErrorMessage   string    `gorm:"column:error_message" json:"error_message"`
 }
 
 // TableName LogAutomationExecution's table name

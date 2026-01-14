@@ -34,7 +34,6 @@ func newLogAutomationExecution(db *gorm.DB, opts ...gen.DOOption) logAutomationE
 	_logAutomationExecution.TriggeredAt = field.NewTime(tableName, "triggered_at")
 	_logAutomationExecution.FinishedAt = field.NewTime(tableName, "finished_at")
 	_logAutomationExecution.ConfigSnapshot = field.NewString(tableName, "config_snapshot")
-	_logAutomationExecution.ExecutionDetails = field.NewString(tableName, "execution_details")
 	_logAutomationExecution.ErrorMessage = field.NewString(tableName, "error_message")
 
 	_logAutomationExecution.fillFieldMap()
@@ -45,15 +44,14 @@ func newLogAutomationExecution(db *gorm.DB, opts ...gen.DOOption) logAutomationE
 type logAutomationExecution struct {
 	logAutomationExecutionDo logAutomationExecutionDo
 
-	ALL              field.Asterisk
-	LogID            field.String
-	AutomationID     field.String
-	Status           field.String
-	TriggeredAt      field.Time
-	FinishedAt       field.Time
-	ConfigSnapshot   field.String
-	ExecutionDetails field.String
-	ErrorMessage     field.String
+	ALL            field.Asterisk
+	LogID          field.String
+	AutomationID   field.String
+	Status         field.String
+	TriggeredAt    field.Time
+	FinishedAt     field.Time
+	ConfigSnapshot field.String
+	ErrorMessage   field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -76,7 +74,6 @@ func (l *logAutomationExecution) updateTableName(table string) *logAutomationExe
 	l.TriggeredAt = field.NewTime(table, "triggered_at")
 	l.FinishedAt = field.NewTime(table, "finished_at")
 	l.ConfigSnapshot = field.NewString(table, "config_snapshot")
-	l.ExecutionDetails = field.NewString(table, "execution_details")
 	l.ErrorMessage = field.NewString(table, "error_message")
 
 	l.fillFieldMap()
@@ -106,14 +103,13 @@ func (l *logAutomationExecution) GetFieldByName(fieldName string) (field.OrderEx
 }
 
 func (l *logAutomationExecution) fillFieldMap() {
-	l.fieldMap = make(map[string]field.Expr, 8)
+	l.fieldMap = make(map[string]field.Expr, 7)
 	l.fieldMap["log_id"] = l.LogID
 	l.fieldMap["automation_id"] = l.AutomationID
 	l.fieldMap["status"] = l.Status
 	l.fieldMap["triggered_at"] = l.TriggeredAt
 	l.fieldMap["finished_at"] = l.FinishedAt
 	l.fieldMap["config_snapshot"] = l.ConfigSnapshot
-	l.fieldMap["execution_details"] = l.ExecutionDetails
 	l.fieldMap["error_message"] = l.ErrorMessage
 }
 

@@ -164,37 +164,50 @@ func (sr *SessionReceiver) runMessageWorker(sem chan struct{}, wg *sync.WaitGrou
 	defer wg.Done()
 	defer func() { <-sem }()
 
-	err := sr.handleMessage(msg)
+	log, err := sr.handleMessage(msg)
+
 	if err != nil {
 		// Log: Failed/Abandon
 		fmt.Println(err)
+
+		log.ErrorMessage = err.Error()
+		sr.logService.Upsert(sr.ctx, log)
 		sessionReceiver.AbandonMessage(sr.ctx, msg, nil)
+
 		return
 	}
 
 	// Log: Success/Complete
+	sr.logService.Upsert(sr.ctx, log)
 	sessionReceiver.CompleteMessage(sr.ctx, msg, nil)
 }
 
 // handleMessage contains the actual business logic for processing a single message
-func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) error {
+func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) (*model.LogAutomationExecution, error) {
 	// Check for nil message early
 	if msg == nil {
-		return fmt.Errorf("received nil message")
+		return nil, fmt.Errorf("received nil message")
 	}
 
 	var body dto.MessageServiceBus
 	if err := json.Unmarshal(msg.Body, &body); err != nil {
-		return fmt.Errorf("invalid message json: %w", err)
+		return nil, fmt.Errorf("invalid message json: %w", err)
 	}
 	if err := body.Validate(); err != nil {
-		return err
+		return nil, err
+	}
+
+	log := model.LogAutomationExecution{
+		LogID:        body.LogID,
+		AutomationID: body.AutomationID,
+		TriggeredAt:  body.TriggeredAt,
 	}
 
 	// Fetch automation snapshot
 	snapshot, err := sr.runService.GetAutomationSnapshot(sr.ctx, body.AutomationID)
 	if err != nil {
-		return fmt.Errorf("failed to get automation snapshot by ID: %w", err)
+		log.Status = "FAILED"
+		return &log, fmt.Errorf("failed to get automation snapshot by ID: %w", err)
 	}
 
 	actionIDs := make([]string, 0)
@@ -204,34 +217,33 @@ func (sr *SessionReceiver) handleMessage(msg *azservicebus.ReceivedMessage) erro
 
 	actions, err := sr.definitionService.ListActionByIDs(sr.ctx, actionIDs)
 	if err != nil {
-		return err
+		log.Status = "FAILED"
+		return &log, err
 	}
 
 	snapshotBody, err := json.Marshal(snapshot)
 	if err != nil {
-		return err
+		log.Status = "FAILED"
+		return &log, err
 	}
 
-	log := model.LogAutomationExecution{
-		LogID:          body.LogID,
-		AutomationID:   body.AutomationID,
-		Status:         "RUNNING",
-		TriggeredAt:    body.TriggeredAt,
-		ConfigSnapshot: string(snapshotBody),
-	}
+	log.ConfigSnapshot = string(snapshotBody)
 
 	for _, action := range actions {
-		statusCode, _, err := httpclient.PostRequest(action.InvokeURL, snapshotBody)
-		if err != nil || statusCode != 200 {
+		statusCode, response, err := httpclient.PostRequest(action.InvokeURL, snapshotBody)
+		if err != nil {
 			log.Status = "FAILED"
-			log.ErrorMessage = "post request failed"
-			sr.logService.Upsert(sr.ctx, &log)
-			return fmt.Errorf("post request failed")
+			return &log, err
+		} else if statusCode != 200 {
+			respBytes, _ := json.Marshal(response)
+
+			log.Status = "FAILED"
+			return &log, fmt.Errorf(string(respBytes))
 		}
 	}
 
 	// Successfully processed the message
 	log.Status = "SUCCESS"
-	sr.logService.Upsert(sr.ctx, &log)
-	return nil
+	log.FinishedAt = time.Now()
+	return &log, nil
 }
