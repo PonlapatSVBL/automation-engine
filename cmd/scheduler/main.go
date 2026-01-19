@@ -97,6 +97,12 @@ func main() {
 		go runWorker(ctx, time.Now(), runService, logService, sender)
 	})
 
+	// ลบ Log เก่า ทุกวันตอน 00:01 AM
+	c.AddFunc("1 0 * * *", func() {
+		log.Println("🧹 Starting daily log cleanup...")
+		go cleanupOldLogs(context.Background(), logService)
+	})
+
 	c.Start()
 	log.Println("Scheduler Started... Press Ctrl+C to exit")
 
@@ -193,4 +199,16 @@ func calculateNextRun(task *model.RunAutomation) (time.Time, error) {
 	default:
 		return time.Time{}, fmt.Errorf("unsupported frequency: %s", task.Frequency)
 	}
+}
+
+func cleanupOldLogs(ctx context.Context, logService service.LogService) {
+	// กำหนดเวลาตัดเกณฑ์ (7 วันที่แล้ว)
+	threshold := time.Now().AddDate(0, 0, -7)
+
+	if err := logService.DeleteLogsBefore(ctx, threshold); err != nil {
+		log.Printf("❌ Failed to cleanup old logs: %v", err)
+		return
+	}
+
+	log.Printf("✅ Daily log cleanup completed. Logs older than %s removed.", threshold.Format("2006-01-02"))
 }

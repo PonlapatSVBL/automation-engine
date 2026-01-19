@@ -14,6 +14,7 @@ type AutomationExecutionRepository interface {
 	GenerateLogID() string
 	Create(ctx context.Context, log *model.LogAutomationExecution) error
 	Upsert(ctx context.Context, log *model.LogAutomationExecution) error
+	DeleteBefore(ctx context.Context, t time.Time) error
 }
 
 type automationExecutionRepository struct {
@@ -47,4 +48,13 @@ func (r *automationExecutionRepository) Upsert(ctx context.Context, log *model.L
 		Columns:   []clause.Column{{Name: "log_id"}},
 		UpdateAll: true,
 	}).Create(log).Error
+}
+
+func (r *automationExecutionRepository) DeleteBefore(ctx context.Context, t time.Time) error {
+	q := query.Use(r.Executor(ctx)).LogAutomationExecution
+	_, err := q.WithContext(ctx).
+		Unscoped().
+		Where(q.TriggeredAt.Lt(t)).
+		Delete()
+	return err
 }
